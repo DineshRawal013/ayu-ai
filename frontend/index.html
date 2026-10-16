@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Ayu AI reads your age, health and Vedic birth chart together, with a private AI insight from a self-hosted model.">
+  <title>Ayu AI: age, health and kundali</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ccircle cx='16' cy='16' r='14' fill='%232E6B58'/%3E%3Ccircle cx='16' cy='16' r='6' fill='none' stroke='%23F2C46B' stroke-width='2.5'/%3E%3C/svg%3E">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:ital,wght@0,400;0,700;1,400&family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header class="topbar">
+    <a class="brand" href="/" aria-label="Ayu AI home">
+      <svg class="brand-mark" viewBox="0 0 32 32" aria-hidden="true"><circle cx="16" cy="16" r="14"/><circle cx="16" cy="16" r="6"/></svg>
+      <span>Ayu AI</span>
+    </a>
+    <span class="privacy-pill" title="Results are stored without your name or email so you can reopen them with a link.">Saved anonymously. AI runs on our own server.</span>
+  </header>
+
+  <main>
+    <section class="hero wrap">
+      <h1>Your age, your health and your sky, read together.</h1>
+      <p class="lede">Enter your birth details and a few measurements. Ayu works out your exact age, your health indicators and your Vedic birth chart, then a private AI model writes a short read of all three.</p>
+    </section>
+
+    <form id="mainForm" class="wrap form" novalidate>
+      <fieldset class="group">
+        <legend>About you</legend>
+        <p class="group-note">Date of birth is required. Birth time and place unlock your kundali.</p>
+        <div class="grid">
+          <label class="field">
+            <span>Date of birth</span>
+            <input id="dob" type="date" required>
+          </label>
+          <label class="field">
+            <span>Birth time <em>optional</em></span>
+            <input id="birthTime" type="time">
+          </label>
+          <div class="field wide place-field">
+            <label for="placeInput"><span>Birth place <em>optional</em></span></label>
+            <input id="placeInput" type="text" autocomplete="off" placeholder="Start typing a city, e.g. Pokhara" role="combobox" aria-expanded="false" aria-controls="placeList" aria-autocomplete="list">
+            <ul id="placeList" class="place-list" role="listbox" hidden></ul>
+            <small id="placeMeta" class="hint"></small>
+          </div>
+        </div>
+      </fieldset>
+
+      <fieldset class="group">
+        <legend>Your body</legend>
+        <div class="grid">
+          <label class="field">
+            <span>Sex</span>
+            <select id="sex" required>
+              <option value="">Select</option>
+              <option value="male">Male</option>
+              <option value="female">Female</option>
+            </select>
+          </label>
+          <label class="field">
+            <span>Country <em>for life expectancy</em></span>
+            <select id="country" required></select>
+          </label>
+          <label class="field">
+            <span>Height</span>
+            <div class="unit"><input id="height" type="number" min="100" max="250" step="0.1" placeholder="175" required inputmode="decimal"><i>cm</i></div>
+          </label>
+          <label class="field">
+            <span>Weight</span>
+            <div class="unit"><input id="weight" type="number" min="25" max="300" step="0.1" placeholder="70" required inputmode="decimal"><i>kg</i></div>
+          </label>
+          <label class="field">
+            <span>Waist <em>optional</em></span>
+            <div class="unit"><input id="waist" type="number" min="30" max="250" step="0.1" placeholder="80" inputmode="decimal"><i>cm</i></div>
+          </label>
+        </div>
+      </fieldset>
+
+      <fieldset class="group">
+        <legend>Your habits</legend>
+        <div class="grid">
+          <label class="field wide">
+            <span>Activity</span>
+            <select id="activity" required>
+              <option value="">Select your usual activity</option>
+              <option value="1.2">Sedentary: little or no exercise</option>
+              <option value="1.375">Light: exercise 1–3 days a week</option>
+              <option value="1.55">Moderate: exercise 3–5 days a week</option>
+              <option value="1.725">Very active: exercise 6–7 days a week</option>
+              <option value="1.9">Extra active: hard training or a physical job</option>
+            </select>
+          </label>
+          <label class="field">
+            <span>Sleep per night</span>
+            <div class="unit"><input id="sleep" type="number" min="2" max="16" step="0.5" placeholder="7.5" required inputmode="decimal"><i>hours</i></div>
+          </label>
+          <label class="field">
+            <span>Alcohol</span>
+            <div class="unit"><input id="alcohol" type="number" min="0" max="100" step="1" placeholder="0" required inputmode="numeric"><i>drinks/week</i></div>
+          </label>
+          <div class="field wide">
+            <span class="field-label" id="smokingLabel">Smoking</span>
+            <div class="segmented" role="radiogroup" aria-labelledby="smokingLabel">
+              <label><input type="radio" name="smoking" value="never" checked><span>Never</span></label>
+              <label><input type="radio" name="smoking" value="former"><span>Used to</span></label>
+              <label><input type="radio" name="smoking" value="current"><span>Smoke now</span></label>
+            </div>
+          </div>
+        </div>
+      </fieldset>
+
+      <div id="formError" class="form-error" role="alert" aria-live="polite"></div>
+      <button id="submitBtn" class="primary" type="submit">Read my results</button>
+    </form>
+
+    <!-- ================= RESULTS ================= -->
+    <div id="results" class="results" hidden>
+      <div class="wrap results-head">
+        <h2>Your reading</h2>
+        <div class="results-actions">
+          <button id="shareBtn" class="ghost" type="button" hidden>Copy share link</button>
+          <button id="resetBtn" class="ghost" type="button">Start over</button>
+        </div>
+      </div>
+
+      <!-- Age -->
+      <section class="wrap block" aria-labelledby="ageTitle">
+        <h3 id="ageTitle">Age</h3>
+        <div class="age-row">
+          <div class="age-big">
+            <span id="ageYears" class="num">0</span><small>years</small>
+            <span id="ageMonths" class="num">0</span><small>months</small>
+            <span id="ageDays" class="num">0</span><small>days</small>
+          </div>
+          <div class="age-live" aria-live="off">
+            <span class="label">Seconds alive</span>
+            <span id="liveSeconds" class="num ticker">0</span>
+          </div>
+        </div>
+        <dl class="age-facts">
+          <div><dt>Days</dt><dd id="totalDays">—</dd></div>
+          <div><dt>Hours</dt><dd id="totalHours">—</dd></div>
+          <div><dt>Minutes</dt><dd id="totalMinutes">—</dd></div>
+          <div><dt>Next birthday</dt><dd id="nextBirthday">—</dd></div>
+        </dl>
+      </section>
+
+      <!-- Lifeline -->
+      <section class="wrap block" aria-labelledby="lifeTitle">
+        <div class="block-head">
+          <h3 id="lifeTitle">Lifeline</h3>
+          <span class="tag">Just for fun</span>
+        </div>
+        <p class="life-headline"><span id="remainingYears" class="num">—</span> years ahead, by a rough estimate</p>
+        <div class="lifeline" aria-hidden="true">
+          <div class="lifeline-track"><div id="lifelineFill" class="lifeline-fill"></div><div id="lifelineMark" class="lifeline-mark"></div></div>
+          <div class="lifeline-scale"><span>Birth</span><span id="lifelineNow">Now</span><span id="lifelineEnd">—</span></div>
+        </div>
+        <p id="lifeExplain" class="muted"></p>
+        <ul id="lifeFactors" class="factors"></ul>
+        <p class="fineprint">Starts from the average life expectancy for your country and sex, then adds or removes years for habits using rounded effects from large population studies. It is not a medical prediction, and your habits can change it.</p>
+      </section>
+
+      <!-- AI -->
+      <section class="wrap block insight" aria-labelledby="aiTitle">
+        <div class="block-head">
+          <h3 id="aiTitle">Ayu's read</h3>
+          <span id="aiStatus" class="tag">Writing…</span>
+        </div>
+        <div id="insightBody" class="insight-body" aria-live="polite"></div>
+        <button id="retryInsight" class="ghost small" type="button" hidden>Try the AI read again</button>
+        <p class="fineprint">Written by a small open model (qwen2.5) running on Ayu's own server, using only the numbers on this page. It can be wrong; it is not medical advice.</p>
+      </section>
+
+      <!-- Health -->
+      <section class="wrap block" aria-labelledby="healthTitle">
+        <h3 id="healthTitle">Health</h3>
+        <div class="metrics">
+          <div class="metric"><span class="label">BMI</span><span id="mBmi" class="num">—</span><small id="mBmiCat">—</small></div>
+          <div class="metric"><span class="label">Resting burn (BMR)</span><span id="mBmr" class="num">—</span><small>kcal a day</small></div>
+          <div class="metric"><span class="label">Daily burn (TDEE)</span><span id="mTdee" class="num">—</span><small>kcal a day</small></div>
+          <div class="metric"><span class="label">Water</span><span id="mWater" class="num">—</span><small>litres a day</small></div>
+          <div class="metric"><span class="label">Reference weight</span><span id="mRange" class="num">—</span><small>BMI 18.5–24.9</small></div>
+          <div class="metric"><span class="label">Waist ÷ height</span><span id="mWhtr" class="num">—</span><small id="mWhtrNote">add your waist</small></div>
+        </div>
+
+        <h4>Alerts</h4>
+        <ul id="alerts" class="alerts"></ul>
+
+        <div class="charts">
+          <figure class="chart-box">
+            <figcaption>Habit balance <small>100 is best on each axis</small></figcaption>
+            <div class="chart-wrap"><canvas id="radarChart" aria-label="Habit balance radar chart"></canvas></div>
+          </figure>
+          <figure class="chart-box">
+            <figcaption>Weight over the next 12 weeks <small>three intake scenarios</small></figcaption>
+            <div class="chart-wrap"><canvas id="projChart" aria-label="12-week weight projection chart"></canvas></div>
+          </figure>
+        </div>
+        <p class="fineprint">These indicators are screening estimates and do not diagnose anything. For medical questions, see a qualified healthcare professional.</p>
+      </section>
+
+      <!-- Kundali -->
+      <section id="kundaliSection" class="night" aria-labelledby="kTitle">
+        <div class="wrap">
+          <div class="block-head">
+            <h3 id="kTitle">Kundali</h3>
+            <span class="tag tag-night">Traditional, for cultural interest</span>
+          </div>
+
+          <div id="kundaliEmpty" class="night-empty" hidden>
+            <p>Add your birth place (and ideally birth time) above to see your Vedic birth chart, dasha timeline and moving planets.</p>
+          </div>
+
+          <div id="kundaliContent" hidden>
+            <p id="kSummary" class="k-summary"></p>
+            <p id="kTimeNote" class="k-note" hidden>No birth time given, so noon was used. The lagna and houses may be wrong; planet signs are mostly right.</p>
+
+            <div class="k-grid">
+              <figure class="k-chart">
+                <figcaption>Birth chart, North Indian style</figcaption>
+                <svg id="northChart" viewBox="0 0 400 400" role="img" aria-label="North Indian birth chart"></svg>
+              </figure>
+              <div class="k-table-wrap">
+                <table class="k-table">
+                  <caption class="sr-only">Planet positions at birth</caption>
+                  <thead><tr><th scope="col">Graha</th><th scope="col">Rashi</th><th scope="col">Degree</th><th scope="col">House</th><th scope="col">Nakshatra</th></tr></thead>
+                  <tbody id="planetRows"></tbody>
+                </table>
+              </div>
+            </div>
+
+            <!-- Animated wheel -->
+            <div class="wheel-block">
+              <h4>The sky since you were born</h4>
+              <div class="wheel-layout">
+                <svg id="wheel" viewBox="-260 -260 520 520" role="img" aria-label="Animated zodiac wheel showing planet positions over time"></svg>
+                <div class="wheel-side">
+                  <p class="wheel-date"><span id="wheelDate">—</span><span id="wheelLive" class="live-dot" hidden>Live</span></p>
+                  <p id="wheelAge" class="muted"></p>
+                  <p id="wheelDasha" class="wheel-dasha"></p>
+                  <ol id="wheelEvents" class="wheel-events" aria-live="polite"></ol>
+                  <p class="muted small-print">Faint rings mark where each planet was at your birth.</p>
+                </div>
+              </div>
+              <div class="wheel-controls">
+                <button id="playBtn" class="play" type="button" aria-label="Play">▶</button>
+                <input id="timeSlider" type="range" min="0" max="1000" value="0" step="1" aria-label="Date on the timeline">
+                <select id="speedSel" aria-label="Playback speed">
+                  <option value="1">1×</option>
+                  <option value="4" selected>4×</option>
+                  <option value="16">16×</option>
+                </select>
+                <button id="liveBtn" class="ghost-night small" type="button">Jump to now</button>
+              </div>
+            </div>
+
+            <!-- Dasha timeline -->
+            <div class="dasha-block">
+              <h4>Vimshottari dasha timeline</h4>
+              <div id="dashaTimeline" class="dasha-timeline"></div>
+              <div class="dasha-legend">
+                <span><i class="sw sw-notable"></i>Traditionally challenging (notable)</span>
+                <span><i class="sw sw-mild"></i>Traditionally challenging (mild)</span>
+                <span><i class="sw sw-now"></i>Today</span>
+              </div>
+            </div>
+
+            <div class="periods-block">
+              <h4>Periods tradition asks you to take extra care</h4>
+              <ul id="periods" class="periods"></ul>
+              <button id="morePeriods" class="ghost-night small" type="button" hidden>Show all periods</button>
+            </div>
+
+            <p class="fineprint night-fine">Calculated with the Swiss Ephemeris, Lahiri ayanamsa and whole-sign houses. Vedic astrology is a cultural tradition with no proven power to predict health, events or lifespan. Ayu never uses it for the lifespan estimate.</p>
+          </div>
+        </div>
+      </section>
+    </div>
+  </main>
+
+  <footer class="footer">
+    <p>Ayu AI is an educational tool, not a medical device. Built with Node.js, PostgreSQL and Ollama.</p>
+  </footer>
+
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js" defer></script>
+  <script src="kundali.js" defer></script>
+  <script src="app.js" defer></script>
+</body>
+</html>

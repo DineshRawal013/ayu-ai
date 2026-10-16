@@ -1,0 +1,21 @@
+{
+  "name": "ayu-ai-backend",
+  "version": "1.0.0",
+  "description": "Ayu AI backend: age, health, lifespan, kundali and Ollama insight API",
+  "main": "src/server.js",
+  "scripts": {
+    "start": "node src/server.js",
+    "test": "node --test test/*.test.js"
+  },
+  "license": "MIT",
+  "dependencies": {
+    "@photostructure/tz-lookup": "^11.7.0",
+    "express": "^5.3.0",
+    "luxon": "^3.7.2",
+    "pg": "^8.23.1",
+    "sweph": "^2.10.3-8"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}

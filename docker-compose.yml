@@ -1,0 +1,72 @@
+# Ayu AI: 4 containers on one private network.
+#   frontend (nginx)  -> public port 80, proxies /api to backend
+#   backend (Express) -> talks to postgres and ollama internally
+#   postgres          -> no public port
+#   ollama            -> no public port, pulls the model on first start
+#
+# Local:   docker compose up --build
+# Azure:   images come from GHCR (see .github/workflows/deploy.yml)
+
+name: ayu-ai
+
+services:
+  frontend:
+    build: ./frontend
+    image: ghcr.io/${GHCR_OWNER:-dineshrawal013}/ayu-ai-frontend:${TAG:-latest}
+    ports:
+      - "${HTTP_PORT:-80}:80"
+    depends_on:
+      backend:
+        condition: service_healthy
+    restart: unless-stopped
+
+  backend:
+    build: ./backend
+    image: ghcr.io/${GHCR_OWNER:-dineshrawal013}/ayu-ai-backend:${TAG:-latest}
+    environment:
+      DATABASE_URL: postgres://${POSTGRES_USER:-ayu}:${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env}@postgres:5432/${POSTGRES_DB:-ayu}
+      OLLAMA_URL: http://ollama:11434
+      OLLAMA_MODEL: ${OLLAMA_MODEL:-qwen2.5:1.5b}
+      NOMINATIM_USER_AGENT: ${NOMINATIM_USER_AGENT:-AyuAI/1.0 (https://github.com/DineshRawal013/ayu-ai)}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      ollama:
+        condition: service_started
+    restart: unless-stopped
+
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-ayu}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env}
+      POSTGRES_DB: ${POSTGRES_DB:-ayu}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+    restart: unless-stopped
+
+  ollama:
+    image: ollama/ollama:latest
+    entrypoint: ["/bin/sh", "/ayu/entrypoint.sh"]
+    environment:
+      OLLAMA_MODEL: ${OLLAMA_MODEL:-qwen2.5:1.5b}
+      OLLAMA_KEEP_ALIVE: 24h
+      OLLAMA_NUM_PARALLEL: 2
+    volumes:
+      - ollama_data:/root/.ollama
+      - ./ollama/entrypoint.sh:/ayu/entrypoint.sh:ro
+    healthcheck:
+      test: ["CMD", "ollama", "list"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+    restart: unless-stopped
+
+volumes:
+  pgdata:
+  ollama_data:
