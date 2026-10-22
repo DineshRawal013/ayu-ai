@@ -162,6 +162,12 @@ input:focus, select:focus { border-color: var(--sage); outline: none; box-shadow
 .factors .plus b { color: var(--sage); }
 .factors .minus b { color: var(--rose); }
 
+/* AI lifespan guess */
+.guess-headline { margin-bottom: 12px; }
+.guess-headline .num { color: var(--turmeric); }
+#guessReason { max-width: 70ch; margin: 0 0 12px; }
+.guess-compare { font-weight: 700; margin: 0 0 12px; }
+
 /* AI */
 .insight-body { max-width: 70ch; font-size: 1.08rem; min-height: 3em; }
 .insight-body h3 { font-family: var(--display); font-size: 1.15rem; margin: 22px 0 6px; letter-spacing: 0; }

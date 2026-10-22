@@ -111,7 +111,7 @@ app.get("/api/results/:id", wrap(async (req, res) => {
   if (!UUID_RE.test(req.params.id)) return res.status(400).json({ error: "Invalid id" });
   const row = await db.getResult(req.params.id);
   if (!row) return res.status(404).json({ error: "Result not found" });
-  res.json({ id: row.id, createdAt: row.created_at, input: row.input, insight: row.insight, ...row.result });
+  res.json({ id: row.id, createdAt: row.created_at, input: row.input, insight: row.insight, aiGuess: row.ai_guess, ...row.result });
 }));
 
 // ---------- AI insight (streamed plain text) ----------
@@ -148,6 +148,37 @@ app.post("/api/results/:id/insight", wrap(async (req, res) => {
     res.end("\n\n_The AI insight could not be completed. Please try again._");
   } finally {
     generating.delete(id);
+  }
+}));
+
+// ---------- AI lifespan guess (separate from the calculated estimate) ----------
+
+const guessing = new Set(); // ids with a guess in progress
+
+app.post("/api/results/:id/guess", wrap(async (req, res) => {
+  const { id } = req.params;
+  if (!UUID_RE.test(id)) return res.status(400).json({ error: "Invalid id" });
+  const row = await db.getResult(id);
+  if (!row) return res.status(404).json({ error: "Result not found" });
+
+  if (row.ai_guess) return res.json(row.ai_guess);
+  if (guessing.has(id)) return res.status(409).json({ error: "The AI is already guessing. Refresh in a few seconds." });
+
+  const st = await ai.status();
+  if (!st.reachable) return res.status(503).json({ error: "The AI service is offline right now." });
+  if (!st.modelReady) return res.status(503).json({ error: "The AI model is still downloading. Please try again in a few minutes." });
+
+  guessing.add(id);
+  const controller = new AbortController();
+  res.on("close", () => { if (!res.writableEnded) controller.abort(); });
+  try {
+    const ageYears = row.result.age.decimalYears;
+    const guess = await ai.guessLifespan(ai.buildGuessPrompt(row.input, row.result), ageYears, controller.signal);
+    if (!guess) return res.status(502).json({ error: "The AI couldn't make a sensible guess this time." });
+    await db.saveGuess(id, guess);
+    res.json(guess);
+  } finally {
+    guessing.delete(id);
   }
 }));
 

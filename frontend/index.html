@@ -151,7 +151,7 @@
       <section class="wrap block" aria-labelledby="lifeTitle">
         <div class="block-head">
           <h3 id="lifeTitle">Lifeline</h3>
-          <span class="tag">Just for fun</span>
+          <span class="tag">Calculated · just for fun</span>
         </div>
         <p class="life-headline"><span id="remainingYears" class="num">—</span> years ahead, by a rough estimate</p>
         <div class="lifeline" aria-hidden="true">
@@ -161,6 +161,19 @@
         <p id="lifeExplain" class="muted"></p>
         <ul id="lifeFactors" class="factors"></ul>
         <p class="fineprint">Starts from the average life expectancy for your country and sex, then adds or removes years for habits using rounded effects from large population studies. It is not a medical prediction, and your habits can change it.</p>
+      </section>
+
+      <!-- AI lifespan guess (independent of the calculated Lifeline) -->
+      <section class="wrap block" aria-labelledby="guessTitle">
+        <div class="block-head">
+          <h3 id="guessTitle">AI's guess</h3>
+          <span id="guessStatus" class="tag">Guessing…</span>
+        </div>
+        <p class="life-headline guess-headline"><span id="guessAge" class="num">—</span> years old, the AI guesses</p>
+        <p id="guessReason" class="muted" aria-live="polite"></p>
+        <p id="guessCompare" class="guess-compare"></p>
+        <button id="retryGuess" class="ghost small" type="button" hidden>Ask the AI again</button>
+        <p class="fineprint">The AI (qwen2.5) made this guess on its own from your answers only. It never saw the calculated Lifeline above, so the two numbers will differ. It is a learning exercise, not a prediction.</p>
       </section>
 
       <!-- AI -->

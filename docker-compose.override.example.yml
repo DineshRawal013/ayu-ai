@@ -1,0 +1,22 @@
+# LOCAL ONLY: use PostgreSQL installed on Windows instead of the postgres container.
+#   cp docker-compose.override.example.yml docker-compose.override.yml
+#   then set LOCAL_PG_* in .env
+#
+# `docker compose up` loads docker-compose.override.yml automatically. It is
+# gitignored and never copied to Azure, which keeps using the postgres container.
+
+services:
+  backend:
+    environment:
+      DATABASE_URL: postgres://${LOCAL_PG_USER:-ayu}@host.docker.internal:${LOCAL_PG_PORT:-5432}/${LOCAL_PG_DB:-ayu}
+      PGPASSWORD: ${LOCAL_PG_PASSWORD:?Set LOCAL_PG_PASSWORD in .env}
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    # Drop the dependency on the postgres container.
+    depends_on: !override
+      ollama:
+        condition: service_started
+
+  # Not started locally; start it anyway with: docker compose --profile container-db up
+  postgres:
+    profiles: ["container-db"]

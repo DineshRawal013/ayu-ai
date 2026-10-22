@@ -24,6 +24,7 @@ async function init(retries = 30) {
           insight_at  TIMESTAMPTZ
         );
         CREATE INDEX IF NOT EXISTS results_created_at_idx ON results (created_at DESC);
+        ALTER TABLE results ADD COLUMN IF NOT EXISTS ai_guess JSONB;
       `);
       ready = true;
       console.log("Database ready");
@@ -48,7 +49,7 @@ async function saveResult(input, result) {
 async function getResult(id) {
   if (!ready) return null;
   const { rows } = await pool.query(
-    "SELECT id, created_at, input, result, insight FROM results WHERE id = $1",
+    "SELECT id, created_at, input, result, insight, ai_guess FROM results WHERE id = $1",
     [id]
   );
   return rows[0] || null;
@@ -57,6 +58,11 @@ async function getResult(id) {
 async function saveInsight(id, text) {
   if (!ready) return;
   await pool.query("UPDATE results SET insight = $2, insight_at = now() WHERE id = $1", [id, text]);
+}
+
+async function saveGuess(id, guess) {
+  if (!ready) return;
+  await pool.query("UPDATE results SET ai_guess = $2 WHERE id = $1", [id, guess]);
 }
 
 async function ping() {
@@ -68,4 +74,4 @@ async function ping() {
   }
 }
 
-module.exports = { init, saveResult, getResult, saveInsight, ping, isReady: () => ready };
+module.exports = { init, saveResult, getResult, saveInsight, saveGuess, ping, isReady: () => ready };

@@ -24,7 +24,9 @@ services:
     build: ./backend
     image: ghcr.io/${GHCR_OWNER:-dineshrawal013}/ayu-ai-backend:${TAG:-latest}
     environment:
-      DATABASE_URL: postgres://${POSTGRES_USER:-ayu}:${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env}@postgres:5432/${POSTGRES_DB:-ayu}
+      # Password goes in PGPASSWORD (read by pg) so symbols in it can't break the URL.
+      DATABASE_URL: postgres://${POSTGRES_USER:-ayu}@postgres:5432/${POSTGRES_DB:-ayu}
+      PGPASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env}
       OLLAMA_URL: http://ollama:11434
       OLLAMA_MODEL: ${OLLAMA_MODEL:-qwen2.5:1.5b}
       NOMINATIM_USER_AGENT: ${NOMINATIM_USER_AGENT:-AyuAI/1.0 (https://github.com/DineshRawal013/ayu-ai)}

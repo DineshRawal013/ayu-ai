@@ -1,5 +1,6 @@
 // AI insight via the self-hosted Ollama container.
-// The model only explains numbers the backend already calculated.
+// The insight only explains numbers the backend already calculated; the
+// lifespan guess is the model's own number, kept separate.
 
 const { PLANET_NAME } = require("./kundali");
 
@@ -43,6 +44,69 @@ ${kundali ? `## Kundali reflection
 (2-3 sentences. Say it is traditional belief, not science. Mention the current dasha and frame any challenging period gently as a time to take extra care. Never predict death, illness or a lifespan from astrology.)` : ""}
 
 Rules: never diagnose diseases, never scare the user, suggest seeing a doctor only for "high" alerts.`;
+}
+
+// ---------- AI lifespan guess ----------
+// A separate, independent guess shown next to the calculated estimate. The model
+// gets only the raw answers: no BMI, no calculated lifespan and no kundali, so
+// it can't copy the backend's number. The two are expected to differ.
+
+function buildGuessPrompt(input, r) {
+  const h = input.health;
+  return `Guess how long this person will live, using only your own general knowledge. This is a learning exercise, not medical advice.
+
+Age now: ${r.age.decimalYears.toFixed(1)} years
+Sex: ${h.sex}
+Country: ${r.lifespan.country.name}
+Height: ${h.height} cm, weight: ${h.weight} kg${h.waist ? `, waist: ${h.waist} cm` : ""}
+Activity: ${r.health.metrics.activityLabel}
+Sleep: ${h.sleep} hours/night
+Smoking: ${h.smoking}
+Alcohol: ${h.alcohol} drinks/week
+
+Reply with JSON only, in this exact shape:
+{"estimatedAge": <number, the age you think they will reach>, "reason": "<one or two short sentences>"}`;
+}
+
+// Validates the model's JSON. Returns the guess or null if it makes no sense.
+function parseGuess(text, ageYears) {
+  let obj;
+  try {
+    obj = JSON.parse(text);
+  } catch {
+    return null;
+  }
+  const est = Number(obj && obj.estimatedAge);
+  if (!Number.isFinite(est) || est <= ageYears || est > 125) return null;
+  const reason = typeof obj.reason === "string" ? obj.reason.trim().slice(0, 400) : "";
+  return {
+    estimatedAge: Number(est.toFixed(1)),
+    remainingYears: Number((est - ageYears).toFixed(1)),
+    reason,
+    model: MODEL
+  };
+}
+
+// Asks the model for a guess, with one retry if the answer is invalid.
+async function guessLifespan(prompt, ageYears, signal) {
+  for (let attempt = 0; attempt < 2; attempt++) {
+    const res = await fetch(`${OLLAMA_URL}/api/generate`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        model: MODEL,
+        prompt,
+        stream: false,
+        format: "json",
+        options: { temperature: 0.2, num_predict: 200 }
+      }),
+      signal
+    });
+    if (!res.ok) throw new Error(`Ollama error ${res.status}: ${await res.text()}`);
+    const guess = parseGuess((await res.json()).response, ageYears);
+    if (guess) return guess;
+  }
+  return null;
 }
 
 // Streams generated text; calls onChunk(text) for each piece. Returns full text.
@@ -92,4 +156,4 @@ async function status() {
   }
 }
 
-module.exports = { buildPrompt, streamInsight, status, MODEL };
+module.exports = { buildPrompt, streamInsight, buildGuessPrompt, parseGuess, guessLifespan, status, MODEL };

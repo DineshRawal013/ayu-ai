@@ -13,6 +13,7 @@
   let currentId = null;
   let liveTimer = null;
   let charts = [];
+  let calculatedLifespan = null;
 
   // ---------------- countries ----------------
   async function loadCountries() {
@@ -142,6 +143,7 @@
       render(out, data);
       el("results").scrollIntoView({ behavior: "smooth", block: "start" });
       startInsight(out.id);
+      startGuess(out.id);
     } catch (err) {
       errorBox.textContent = err.message === "Failed to fetch" ? "Ayu's server can't be reached. Check that the backend container is running." : err.message;
     } finally {
@@ -195,6 +197,7 @@
   }
 
   function renderLifespan(l, age) {
+    calculatedLifespan = l;
     el("remainingYears").textContent = l.remainingYears;
     const pct = Math.min(100, l.lifeUsedPercent);
     requestAnimationFrame(() => {
@@ -350,6 +353,45 @@
   }
   el("retryInsight").addEventListener("click", () => startInsight(currentId));
 
+  // ---------------- AI lifespan guess ----------------
+  function showGuess(g) {
+    el("guessAge").textContent = Math.round(g.estimatedAge);
+    el("guessReason").textContent = g.reason ? `"${g.reason}"` : "";
+    const calc = calculatedLifespan && calculatedLifespan.estimatedAge;
+    if (calc) {
+      const diff = Math.round(g.estimatedAge - calc);
+      el("guessCompare").textContent = `Calculated: about ${Math.round(calc)} · AI's guess: about ${Math.round(g.estimatedAge)} · ` +
+        (diff === 0 ? "about the same" : `the AI guessed ${Math.abs(diff)} year${Math.abs(diff) === 1 ? "" : "s"} ${diff > 0 ? "higher" : "lower"}`);
+    }
+  }
+
+  async function startGuess(id, existing) {
+    const status = el("guessStatus");
+    el("retryGuess").hidden = true;
+    el("guessAge").textContent = "—";
+    el("guessCompare").textContent = "";
+    if (existing) { showGuess(existing); status.textContent = "Saved"; return; }
+    if (!id) {
+      el("guessReason").textContent = "The AI guess needs the database to be running, so it is unavailable right now.";
+      status.textContent = "Unavailable";
+      return;
+    }
+    el("guessReason").textContent = "The AI is making its own guess…";
+    status.textContent = "Guessing…";
+    try {
+      const res = await fetch(`/api/results/${id}/guess`, { method: "POST" });
+      const g = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(g.error || "The AI guess could not be made. Your calculated results are complete.");
+      showGuess(g);
+      status.textContent = "Done";
+    } catch (e) {
+      status.textContent = "Unavailable";
+      el("guessReason").textContent = e.message || "The AI guess could not be made. Your calculated results are complete.";
+      el("retryGuess").hidden = false;
+    }
+  }
+  el("retryGuess").addEventListener("click", () => startGuess(currentId));
+
   // ---------------- shared link ----------------
   async function loadShared(id) {
     try {
@@ -359,6 +401,7 @@
       currentId = r.id;
       render(r, r.input);
       startInsight(r.id, r.insight);
+      startGuess(r.id, r.aiGuess);
       el("results").scrollIntoView({ block: "start" });
     } catch (e) {
       errorBox.textContent = `That shared reading couldn't be opened: ${e.message}.`;

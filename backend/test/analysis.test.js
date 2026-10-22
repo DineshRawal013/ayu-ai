@@ -3,6 +3,7 @@ const assert = require("node:assert");
 const { runAnalysis } = require("../src/server");
 const { calculateAgeDetailed } = require("../src/age");
 const { transitSeries } = require("../src/kundali");
+const { buildGuessPrompt, parseGuess } = require("../src/ai");
 
 const health = {
   sex: "male", height: 172, weight: 78, activity: "1.375", waist: 88,
@@ -44,6 +45,30 @@ test("kundali: known sidereal positions (Pokhara, 2002-05-13 10:00)", () => {
 test("invalid input is rejected", () => {
   assert.throws(() => runAnalysis({ dob: "2002-05-13", health: { ...health, height: 20 } }));
   assert.throws(() => runAnalysis({ dob: "2020-01-01", health }));
+});
+
+test("AI guess prompt gets raw answers only, not the calculated lifespan or kundali", () => {
+  const input = {
+    dob: "2002-05-13", birthTime: "10:00", health,
+    place: { lat: 28.2096, lon: 83.9856, name: "Pokhara" }
+  };
+  const r = runAnalysis(input);
+  const prompt = buildGuessPrompt(input, r);
+  assert.ok(prompt.includes("Smoking: never"));
+  assert.ok(!prompt.includes(String(r.lifespan.estimatedAge)));
+  assert.ok(!prompt.includes(String(r.health.metrics.bmi)));
+  assert.ok(!/kundali|nakshatra|dasha|lagna/i.test(prompt));
+});
+
+test("AI guess is validated", () => {
+  const g = parseGuess('{"estimatedAge": 79.46, "reason": "Healthy habits."}', 24.4);
+  assert.strictEqual(g.estimatedAge, 79.5);
+  assert.strictEqual(g.remainingYears, 55.1);
+  assert.strictEqual(g.reason, "Healthy habits.");
+  assert.strictEqual(parseGuess("not json", 24), null);
+  assert.strictEqual(parseGuess('{"estimatedAge": 20}', 24), null);
+  assert.strictEqual(parseGuess('{"estimatedAge": 300}', 24), null);
+  assert.strictEqual(parseGuess('{"estimatedAge": "eighty"}', 24), null);
 });
 
 test("transit series is compact", () => {
