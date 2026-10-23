@@ -93,6 +93,10 @@ jobs:
             export TAG="$SHA"
             docker compose pull frontend backend
             docker compose up -d --no-build --remove-orphans
+            # Pick up a changed Caddyfile (up -d doesn't restart Caddy for that).
+            if docker compose ps --status running --services | grep -qx caddy; then
+              docker compose exec -T caddy caddy reload --config /etc/caddy/Caddyfile
+            fi
             docker image prune -f
             docker logout ghcr.io
             # Check on the port the VM's .env publishes, and give a cold start up to 2 minutes.

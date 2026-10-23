@@ -6,3 +6,8 @@
 		flush_interval -1
 	}
 }
+
+# Anything else on port 80 (e.g. the bare IP) goes to the domain, which has the certificate.
+http:// {
+	redir https://{$DOMAIN:localhost}{uri} permanent
+}

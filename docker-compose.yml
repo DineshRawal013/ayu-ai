@@ -32,7 +32,8 @@ services:
     environment:
       DOMAIN: ${DOMAIN:-localhost}
     volumes:
-      - ./caddy/Caddyfile:/etc/caddy/Caddyfile:ro
+      # The folder, not the file: the deploy replaces the file, and a file mount would keep the old one.
+      - ./caddy:/etc/caddy:ro
       - caddy_data:/data
       - caddy_config:/config
     depends_on:
