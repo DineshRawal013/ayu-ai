@@ -95,5 +95,14 @@ jobs:
             docker compose up -d --no-build --remove-orphans
             docker image prune -f
             docker logout ghcr.io
-            sleep 10
-            curl -fsS http://localhost/api/status && echo " deployed $SHA"
+            # Check on the port the VM's .env publishes, and give a cold start up to 2 minutes.
+            PORT=$(grep -E '^HTTP_PORT=' .env | cut -d= -f2 | tr -d '\r')
+            PORT=${PORT:-80}
+            for i in $(seq 1 24); do
+              if curl -fsS "http://localhost:$PORT/api/status"; then echo " deployed $SHA on port $PORT"; exit 0; fi
+              sleep 5
+            done
+            echo "App not reachable on port $PORT after 2 minutes"
+            docker compose ps
+            docker compose logs --tail 50 frontend backend
+            exit 1
