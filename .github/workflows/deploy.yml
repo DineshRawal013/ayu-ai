@@ -71,7 +71,7 @@ jobs:
           host: ${{ secrets.VM_HOST }}
           username: ${{ secrets.VM_USER }}
           key: ${{ secrets.VM_SSH_KEY }}
-          source: "docker-compose.yml,ollama/entrypoint.sh"
+          source: "docker-compose.yml,ollama/entrypoint.sh,caddy/Caddyfile"
           target: "~/ayu-ai"
 
       - name: Pull new images and restart
@@ -96,10 +96,20 @@ jobs:
             docker image prune -f
             docker logout ghcr.io
             # Check on the port the VM's .env publishes, and give a cold start up to 2 minutes.
+            # HTTP_PORT may be "127.0.0.1:8080" when Caddy serves HTTPS, so keep only the port.
             PORT=$(grep -E '^HTTP_PORT=' .env | cut -d= -f2 | tr -d '\r')
             PORT=${PORT:-80}
+            PORT=${PORT##*:}
+            DOMAIN=$(grep -E '^DOMAIN=' .env | cut -d= -f2 | tr -d '\r')
             for i in $(seq 1 24); do
-              if curl -fsS "http://localhost:$PORT/api/status"; then echo " deployed $SHA on port $PORT"; exit 0; fi
+              if curl -fsS "http://localhost:$PORT/api/status"; then
+                echo " deployed $SHA on port $PORT"
+                if [ -n "$DOMAIN" ]; then
+                  curl -fsS -o /dev/null "https://$DOMAIN/api/status" && echo "HTTPS ok: https://$DOMAIN" \
+                    || { echo "Warning: https://$DOMAIN not reachable yet"; docker compose logs --tail 30 caddy; }
+                fi
+                exit 0
+              fi
               sleep 5
             done
             echo "App not reachable on port $PORT after 2 minutes"

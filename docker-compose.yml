@@ -1,4 +1,5 @@
 # Ayu AI: 4 containers on one private network.
+#   caddy (optional)  -> HTTPS on 80/443 in front of frontend (profile "https", Azure only)
 #   frontend (nginx)  -> public port 80, proxies /api to backend
 #   backend (Express) -> talks to postgres and ollama internally
 #   postgres          -> no public port
@@ -18,6 +19,24 @@ services:
     depends_on:
       backend:
         condition: service_healthy
+    restart: unless-stopped
+
+  # HTTPS on Azure only: started when .env sets COMPOSE_PROFILES=https and DOMAIN.
+  # Then set HTTP_PORT=127.0.0.1:8080 so the frontend is no longer public on port 80.
+  caddy:
+    image: caddy:2.8-alpine
+    profiles: ["https"]
+    ports:
+      - "80:80"
+      - "443:443"
+    environment:
+      DOMAIN: ${DOMAIN:-localhost}
+    volumes:
+      - ./caddy/Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      - frontend
     restart: unless-stopped
 
   backend:
@@ -72,3 +91,5 @@ services:
 volumes:
   pgdata:
   ollama_data:
+  caddy_data:
+  caddy_config:

@@ -10,6 +10,7 @@ Ayu AI shows a person's **age**, **health** and **Vedic kundali** on one page, t
 | `backend` | `backend/src/` (Node 20, Express 5) | All calculations, kundali (Swiss Ephemeris via `sweph`, a native module), DB access, AI prompt. |
 | `postgres` | `postgres:16-alpine` | Anonymous result history in a single `results` table (JSONB `input` and `result`, plus `insight` text). The schema is created in `db.js` `init()`, and there are no migrations. |
 | `ollama` | `ollama/ollama` + `ollama/entrypoint.sh` | Runs `qwen2.5:1.5b` on CPU. Pulls the model on first start into the `ollama_data` volume. |
+| `caddy` (optional) | `caddy:2.8-alpine` + `caddy/Caddyfile` | HTTPS on 80/443 in front of `frontend`, Let's Encrypt cert for `DOMAIN`. Only runs with the `https` profile (`COMPOSE_PROFILES=https` in the VM's `.env`, which also sets `HTTP_PORT=127.0.0.1:8080`). Never starts locally. |
 
 Backend modules (`backend/src/`):
 - `server.js` defines the routes and `runAnalysis()`, the single entry point that combines age, health, lifespan and kundali. It is exported for tests.
@@ -34,9 +35,9 @@ Backend modules (`backend/src/`):
 - Current state: the code and copy say the opposite. See the header comment in `kundali.js`, the "Never predict death, illness or a lifespan from astrology" line in `ai.js`, the fineprint in `index.html` and the README disclaimer. If you add this feature, update those places together. Don't change them unprompted.
 
 ### 3. `docker-compose.yml` is the production file
-- GitHub Actions (`.github/workflows/deploy.yml`) copies `docker-compose.yml` and `ollama/entrypoint.sh` to the Azure VM on every push to `main` and runs `docker compose pull frontend backend && docker compose up -d --no-build`.
+- GitHub Actions (`.github/workflows/deploy.yml`) copies `docker-compose.yml`, `ollama/entrypoint.sh` and `caddy/Caddyfile` to the Azure VM on every push to `main` and runs `docker compose pull frontend backend && docker compose up -d --no-build`.
 - **Local-only changes must go in separate files**, e.g. `docker-compose.override.yml`, `docker-compose.local.yml` or a local `.env`. Never put dev-only ports, mounts, build tweaks or debug settings in `docker-compose.yml` or `ollama/entrypoint.sh`.
-- Any change to those two files reaches production on the next push to `main`.
+- Any change to those files reaches production on the next push to `main`.
 
 ## Commands
 

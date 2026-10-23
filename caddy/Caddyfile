@@ -1,0 +1,8 @@
+# HTTPS in front of the frontend container (Azure only, enabled with COMPOSE_PROFILES=https).
+# Caddy gets and renews a Let's Encrypt certificate for $DOMAIN and redirects HTTP to HTTPS.
+{$DOMAIN:localhost} {
+	reverse_proxy frontend:80 {
+		# Stream the AI insight word by word instead of buffering it.
+		flush_interval -1
+	}
+}

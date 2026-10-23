@@ -107,7 +107,7 @@ In the Azure portal (or with the Azure CLI below):
 - Image: **Ubuntu Server 24.04 LTS**
 - Size: **Standard_B2ms** (2 vCPU, 8 GB RAM). The AI model runs on CPU.
 - Authentication: **SSH public key**
-- Inbound ports: **22** and **80** (add 443 later for HTTPS)
+- Inbound ports: **22** and **80** (and **443** for HTTPS, see step 5)
 
 ```bash
 az group create -n ayu-rg -l koreacentral
@@ -138,6 +138,17 @@ Repo → **Settings → Secrets and variables → Actions → New repository sec
 ### 4. Deploy
 
 Push to `main` (or run the workflow from the **Actions** tab). The site appears at `http://<VM_IP>`. The first deploy takes a few extra minutes while the VM downloads the model.
+
+### 5. HTTPS (optional)
+
+1. Give the VM's public IP a **DNS name label** (Public IP → Configuration), set it to **Static**, and open inbound port **443**.
+2. Add to `~/ayu-ai/.env` on the VM (use your own DNS name):
+   ```
+   DOMAIN=ayu-ai.koreacentral.cloudapp.azure.com
+   COMPOSE_PROFILES=https
+   HTTP_PORT=127.0.0.1:8080
+   ```
+3. Run `cd ~/ayu-ai && docker compose up -d` on the VM, or redeploy. Caddy gets a free Let's Encrypt certificate and redirects HTTP to HTTPS.
 
 To save Azure credit, stop the VM when you aren't using it: `az vm deallocate -g ayu-rg -n ayu-vm`.
 
