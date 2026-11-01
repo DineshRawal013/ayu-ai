@@ -1,4 +1,7 @@
-# Ayu AI: 4 containers on one private network.
+# Ayu AI: 4 containers on two private networks.
+#   frontend-net: caddy, frontend, backend  (web tier: browser traffic reaches the API)
+#   backend-net:  backend, postgres, ollama (data tier: only the backend talks to DB and AI)
+#   backend is on both, so it is the only bridge between the tiers.
 #   caddy (optional)  -> HTTPS on 80/443 in front of frontend (profile "https", Azure only)
 #   frontend (nginx)  -> public port 80, proxies /api to backend
 #   backend (Express) -> talks to postgres and ollama internally
@@ -19,6 +22,8 @@ services:
     depends_on:
       backend:
         condition: service_healthy
+    networks:
+      - frontend-net
     restart: unless-stopped
 
   # HTTPS on Azure only: started when .env sets COMPOSE_PROFILES=https and DOMAIN.
@@ -38,6 +43,8 @@ services:
       - caddy_config:/config
     depends_on:
       - frontend
+    networks:
+      - frontend-net
     restart: unless-stopped
 
   backend:
@@ -55,6 +62,9 @@ services:
         condition: service_healthy
       ollama:
         condition: service_started
+    networks:
+      - frontend-net
+      - backend-net
     restart: unless-stopped
 
   postgres:
@@ -70,6 +80,8 @@ services:
       interval: 5s
       timeout: 5s
       retries: 20
+    networks:
+      - backend-net
     restart: unless-stopped
 
   ollama:
@@ -87,7 +99,16 @@ services:
       interval: 30s
       timeout: 10s
       retries: 5
+    networks:
+      - backend-net
     restart: unless-stopped
+
+networks:
+  frontend-net:
+    driver: bridge
+  # Not "internal: true": ollama needs internet to pull the model on first start.
+  backend-net:
+    driver: bridge
 
 volumes:
   pgdata:

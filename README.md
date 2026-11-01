@@ -38,12 +38,32 @@ It merges two earlier projects, [age-calculator-website](https://github.com/Dine
 
 ```mermaid
 flowchart LR
-  B[Browser] -->|:80| F[frontend<br/>nginx]
-  F -->|/api/*| API[backend<br/>Node.js + Express<br/>Swiss Ephemeris]
-  API --> DB[(postgres)]
-  API -->|:11434 internal| O[ollama<br/>qwen2.5:1.5b]
+  B[Browser] -->|:80 / :443| F
+  subgraph FN[frontend-net]
+    C[caddy<br/>optional HTTPS] -.-> F[frontend<br/>nginx]
+    F -->|/api/* :3000| API[backend<br/>Node.js + Express<br/>Swiss Ephemeris]
+  end
+  subgraph BN[backend-net]
+    API -->|:5432| DB[(postgres)]
+    API -->|:11434| O[ollama<br/>qwen2.5:1.5b]
+  end
   API -->|place search| N[OpenStreetMap<br/>Nominatim]
 ```
+
+### Networks
+
+The containers are split into two Docker bridge networks, defined in `docker-compose.yml`:
+
+| Network | Containers | Purpose |
+|---|---|---|
+| `frontend-net` | `caddy`, `frontend`, `backend` | Web tier: browser traffic reaches the API |
+| `backend-net` | `backend`, `postgres`, `ollama` | Data tier: database and AI model |
+
+- The **backend is the only container on both networks**, so it is the single bridge between the tiers. The frontend talks to it only through the HTTP API (`http://backend:3000`), which is the contract between frontend and backend work.
+- The **frontend has no route to `postgres` or `ollama`**, and it does not hold the database password. If the frontend container were compromised, the attacker could only call the backend API, not reach the database or the model directly.
+- Containers find each other by service name (`backend`, `postgres`, `ollama`) through Docker's built-in DNS.
+- Only `frontend` (or `caddy` with HTTPS) publishes a port to the host. `backend`, `postgres` and `ollama` publish none.
+- `backend-net` is not marked `internal`, because `ollama` downloads the model from the internet on first start.
 
 | Container | Image | Public port | Role |
 |---|---|---|---|

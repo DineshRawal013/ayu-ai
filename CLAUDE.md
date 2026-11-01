@@ -12,6 +12,8 @@ Ayu AI shows a person's **age**, **health** and **Vedic kundali** on one page, t
 | `ollama` | `ollama/ollama` + `ollama/entrypoint.sh` | Runs `qwen2.5:1.5b` on CPU. Pulls the model on first start into the `ollama_data` volume. |
 | `caddy` (optional) | `caddy:2.8-alpine` + `caddy/Caddyfile` | HTTPS on 80/443 in front of `frontend`, Let's Encrypt cert for `DOMAIN`. Only runs with the `https` profile (`COMPOSE_PROFILES=https` in the VM's `.env`, which also sets `HTTP_PORT=127.0.0.1:8080`). Never starts locally. |
 
+**Networks:** `frontend-net` (caddy, frontend, backend) and `backend-net` (backend, postgres, ollama). The backend is the only service on both; frontend cannot reach postgres or ollama. `backend-net` is not `internal` because ollama downloads the model from the internet.
+
 Backend modules (`backend/src/`):
 - `server.js` defines the routes and `runAnalysis()`, the single entry point that combines age, health, lifespan and kundali. It is exported for tests.
 - `age.js` handles exact age. `health.js` covers BMI/BMR/TDEE, alerts and the 12-week projection. `lifespan.js` produces the "fun" remaining-years estimate.
