@@ -37,6 +37,8 @@ Optional repository variables (**Settings > Secrets and variables > Actions > Va
 |---|---|---|
 | `AZURE_APP_MIN_REPLICAS` | `0` | `1` keeps the five small apps running. With `0` the first visit after a quiet spell takes 10 to 30 seconds. |
 | `AZURE_OLLAMA_MIN_REPLICAS` | `0` | `1` keeps Ollama (2 vCPU, 4 GiB) running. With `0` the first AI read after a quiet spell waits a few minutes, and the page says the model is not ready until then. |
+| `AZURE_POSTGRES_SKU`, `AZURE_POSTGRES_TIER` | `Standard_B1ms`, `Burstable` | Postgres size. If the deploy fails with `SkuNotAvailable`, your subscription can't use that size in this region: pick one from `az postgres flexible-server list-skus -l koreacentral`. |
+| `AZURE_LOCATION` | the resource group's region | Run the apps and Postgres in another region, e.g. when Postgres has no usable size in Korea Central. |
 | `AZURE_RESOURCE_GROUP` | `ayu-aca-rg` | Only if you ran the script with another `RG`. |
 
 Rough monthly cost at list prices (check the [pricing calculator](https://azure.microsoft.com/pricing/calculator/) for Korea Central):

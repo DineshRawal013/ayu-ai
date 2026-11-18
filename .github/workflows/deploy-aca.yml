@@ -151,6 +151,10 @@ jobs:
           # Repository variables; 1 keeps the apps running, 0 (default) scales them to zero when idle.
           OLLAMA_MIN: ${{ vars.AZURE_OLLAMA_MIN_REPLICAS || '0' }}
           APP_MIN: ${{ vars.AZURE_APP_MIN_REPLICAS || '0' }}
+          # Optional: where the apps and Postgres run (default: the resource group's region), and the Postgres SKU.
+          LOCATION: ${{ vars.AZURE_LOCATION }}
+          PG_SKU: ${{ vars.AZURE_POSTGRES_SKU || 'Standard_B1ms' }}
+          PG_TIER: ${{ vars.AZURE_POSTGRES_TIER || 'Burstable' }}
         run: |
           test -n "$PG_PASSWORD" || { echo "Add the AZURE_POSTGRES_PASSWORD secret first."; exit 1; }
           ACR=$(az acr list -g "$RESOURCE_GROUP" --query "[0].name" -o tsv)
@@ -159,6 +163,7 @@ jobs:
             -f infra/main.bicep \
             -p acrName="$ACR" imageTag="$SHA" ollamaImageTag="$OLLAMA_TAG" postgresPassword="$PG_PASSWORD" \
                ollamaMinReplicas="$OLLAMA_MIN" appMinReplicas="$APP_MIN" \
+               postgresSkuName="$PG_SKU" postgresSkuTier="$PG_TIER" ${LOCATION:+location="$LOCATION"} \
             --query properties.outputs.url.value -o tsv)
           echo "URL=$URL" >> "$GITHUB_ENV"
           echo "Site: $URL" >> "$GITHUB_STEP_SUMMARY"
