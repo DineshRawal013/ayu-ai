@@ -57,6 +57,8 @@ cd services/ai-svc && npm ci && npm test   # uses a fake Ollama, no model needed
 
 Push to `main` → test (matrix over the 4 services) → build 5 images (`frontend`, `gateway`, `health-svc`, `kundali-svc`, `ai-svc`) → push to GHCR (`ghcr.io/<owner>/ayu-ai-<service>:latest` and `:<sha>`) → SCP compose files → SSH, pull and restart → `curl /api/status`. PRs run tests only. The VM is prepared once with `deploy/setup-vm.sh`, which creates `~/ayu-ai/.env`. The `VM_HOST`, `VM_USER` and `VM_SSH_KEY` secrets are required.
 
+**Azure Container Apps (prepared, not live yet):** `infra/main.bicep` + `.github/workflows/deploy-aca.yml` (manual `workflow_dispatch` only, GitHub environment `azure-aca`, OIDC secrets). One container app per service, internal apps reached as `http://<name>` on port 80, managed Postgres in a private VNet, images in ACR, Ollama image with the model baked in (`ollama/Dockerfile`, not used by Compose). `frontend/nginx.conf` is an nginx template: `GATEWAY_URL` defaults to `http://gateway:3000` for Compose. One-time setup in `deploy/azure/README.md`. Until the user switches, the VM deploy stays production.
+
 ## Gotchas
 
 - **Windows line endings:** this repo is developed on Windows with `core.autocrlf=true`. `.gitattributes` forces `*.sh` to LF, because `/bin/sh` fails inside the container on CRLF. Keep that rule. Their executable bit (755) has also been dropped locally.
