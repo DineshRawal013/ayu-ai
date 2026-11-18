@@ -1,0 +1,17 @@
+{
+  "name": "ayu-ai-health-svc",
+  "version": "2.0.0",
+  "description": "Ayu AI health-svc: exact age, health metrics, alerts, projection and lifespan estimate",
+  "main": "src/server.js",
+  "scripts": {
+    "start": "node src/server.js",
+    "test": "node --test test/*.test.js"
+  },
+  "license": "MIT",
+  "dependencies": {
+    "express": "^5.3.0"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}

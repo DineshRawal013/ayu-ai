@@ -1,0 +1,17 @@
+{
+  "name": "ayu-ai-ai-svc",
+  "version": "2.0.0",
+  "description": "Ayu AI ai-svc: insight and lifespan-guess prompts for the self-hosted Ollama model",
+  "main": "src/server.js",
+  "scripts": {
+    "start": "node src/server.js",
+    "test": "node --test test/*.test.js"
+  },
+  "license": "MIT",
+  "dependencies": {
+    "express": "^5.3.0"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}

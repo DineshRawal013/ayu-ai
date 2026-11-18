@@ -1,0 +1,1355 @@
+{
+ "input": {
+  "dob": "2002-05-13",
+  "birthTime": "10:00",
+  "place": {
+   "lat": 28.2096,
+   "lon": 83.9856,
+   "name": "Pokhara"
+  },
+  "health": {
+   "sex": "male",
+   "height": 172,
+   "weight": 78,
+   "activity": "1.375",
+   "waist": 88,
+   "sleep": 6,
+   "smoking": "never",
+   "alcohol": 4,
+   "country": "NP"
+  }
+ },
+ "result": {
+  "age": {
+   "years": 24,
+   "months": 6,
+   "days": 0,
+   "decimalYears": 24.505,
+   "totalDays": 8950,
+   "totalHours": 214806,
+   "totalMinutes": 12888362,
+   "totalSeconds": 773301767,
+   "daysToBirthday": 181,
+   "dateOfBirth": "2002-05-13",
+   "currentDateTime": "2026-11-13T06:02:47.285Z"
+  },
+  "health": {
+   "metrics": {
+    "bmi": 26.4,
+    "bmiCat": {
+     "key": "over",
+     "label": "Above the reference range",
+     "tone": "warning"
+    },
+    "bmr": 1740,
+    "tdee": 2393,
+    "water": 2.6,
+    "weightRange": [
+     54.7,
+     73.7
+    ],
+    "whtr": 0.51,
+    "activityLabel": "Light"
+   },
+   "projection": [
+    {
+     "key": "maintain",
+     "label": "Current intake",
+     "offset": 0,
+     "intake": 2393,
+     "points": [
+      {
+       "week": 0,
+       "weight": 78,
+       "bmi": 26.4
+      },
+      {
+       "week": 1,
+       "weight": 78,
+       "bmi": 26.4
+      },
+      {
+       "week": 2,
+       "weight": 78,
+       "bmi": 26.4
+      },
+      {
+       "week": 3,
+       "weight": 78,
+       "bmi": 26.4
+      },
+      {
+       "week": 4,
+       "weight": 78,
+       "bmi": 26.4
+      },
+      {
+       "week": 5,
+       "weight": 78,
+       "bmi": 26.4
+      },
+      {
+       "week": 6,
+       "weight": 78,
+       "bmi": 26.4
+      },
+      {
+       "week": 7,
+       "weight": 78,
+       "bmi": 26.4
+      },
+      {
+       "week": 8,
+       "weight": 78,
+       "bmi": 26.4
+      },
+      {
+       "week": 9,
+       "weight": 78,
+       "bmi": 26.4
+      },
+      {
+       "week": 10,
+       "weight": 78,
+       "bmi": 26.4
+      },
+      {
+       "week": 11,
+       "weight": 78,
+       "bmi": 26.4
+      },
+      {
+       "week": 12,
+       "weight": 78,
+       "bmi": 26.4
+      }
+     ]
+    },
+    {
+     "key": "deficit",
+     "label": "−500 kcal/day",
+     "offset": -500,
+     "intake": 1893,
+     "points": [
+      {
+       "week": 0,
+       "weight": 78,
+       "bmi": 26.4
+      },
+      {
+       "week": 1,
+       "weight": 77.5,
+       "bmi": 26.2
+      },
+      {
+       "week": 2,
+       "weight": 77.1,
+       "bmi": 26.1
+      },
+      {
+       "week": 3,
+       "weight": 76.7,
+       "bmi": 25.9
+      },
+      {
+       "week": 4,
+       "weight": 76.2,
+       "bmi": 25.8
+      },
+      {
+       "week": 5,
+       "weight": 75.8,
+       "bmi": 25.6
+      },
+      {
+       "week": 6,
+       "weight": 75.4,
+       "bmi": 25.5
+      },
+      {
+       "week": 7,
+       "weight": 74.9,
+       "bmi": 25.3
+      },
+      {
+       "week": 8,
+       "weight": 74.5,
+       "bmi": 25.2
+      },
+      {
+       "week": 9,
+       "weight": 74.1,
+       "bmi": 25
+      },
+      {
+       "week": 10,
+       "weight": 73.7,
+       "bmi": 24.9
+      },
+      {
+       "week": 11,
+       "weight": 73.3,
+       "bmi": 24.8
+      },
+      {
+       "week": 12,
+       "weight": 72.9,
+       "bmi": 24.6
+      }
+     ]
+    },
+    {
+     "key": "surplus",
+     "label": "+300 kcal/day",
+     "offset": 300,
+     "intake": 2693,
+     "points": [
+      {
+       "week": 0,
+       "weight": 78,
+       "bmi": 26.4
+      },
+      {
+       "week": 1,
+       "weight": 78.3,
+       "bmi": 26.5
+      },
+      {
+       "week": 2,
+       "weight": 78.5,
+       "bmi": 26.5
+      },
+      {
+       "week": 3,
+       "weight": 78.8,
+       "bmi": 26.6
+      },
+      {
+       "week": 4,
+       "weight": 79.1,
+       "bmi": 26.7
+      },
+      {
+       "week": 5,
+       "weight": 79.3,
+       "bmi": 26.8
+      },
+      {
+       "week": 6,
+       "weight": 79.6,
+       "bmi": 26.9
+      },
+      {
+       "week": 7,
+       "weight": 79.8,
+       "bmi": 27
+      },
+      {
+       "week": 8,
+       "weight": 80.1,
+       "bmi": 27.1
+      },
+      {
+       "week": 9,
+       "weight": 80.3,
+       "bmi": 27.2
+      },
+      {
+       "week": 10,
+       "weight": 80.6,
+       "bmi": 27.2
+      },
+      {
+       "week": 11,
+       "weight": 80.8,
+       "bmi": 27.3
+      },
+      {
+       "week": 12,
+       "weight": 81.1,
+       "bmi": 27.4
+      }
+     ]
+    }
+   ],
+   "alerts": [
+    {
+     "level": "warning",
+     "title": "BMI above reference range",
+     "detail": "A BMI of 25–29.9 is a common screening flag. Activity and diet habits can help shift it."
+    },
+    {
+     "level": "warning",
+     "title": "Waist-to-height ratio ≥ 0.5",
+     "detail": "Ratio 0.51. Keeping waist under half your height is a common guideline."
+    },
+    {
+     "level": "warning",
+     "title": "Slightly short sleep",
+     "detail": "6 h/night is a little under the 7–9 h guideline."
+    },
+    {
+     "level": "info",
+     "title": "Prediction: reaching the reference range",
+     "detail": "With a −500 kcal/day deficit, you could reach BMI 24.9 (~73.7 kg) in roughly 11 weeks."
+    }
+   ],
+   "scores": {
+    "BMI": 65,
+    "Activity": 40,
+    "Sleep": 60,
+    "Smoke-free": 100,
+    "Alcohol": 100,
+    "Waist": 82
+   }
+  },
+  "lifespan": {
+   "country": {
+    "code": "NP",
+    "name": "Nepal"
+   },
+   "baseline": 69.6,
+   "adjustments": [
+    {
+     "factor": "Reached current age",
+     "years": 3.9,
+     "note": "Survived to 24"
+    },
+    {
+     "factor": "BMI",
+     "years": -1,
+     "note": "25–29.9"
+    },
+    {
+     "factor": "Activity",
+     "years": 0,
+     "note": "Light"
+    },
+    {
+     "factor": "Smoking",
+     "years": 0,
+     "note": "Never smoked"
+    },
+    {
+     "factor": "Alcohol",
+     "years": 0,
+     "note": "4/week"
+    },
+    {
+     "factor": "Sleep",
+     "years": -0.5,
+     "note": "6 h"
+    },
+    {
+     "factor": "Waist",
+     "years": -1,
+     "note": "Ratio 0.51"
+    }
+   ],
+   "totalAdjustment": 1.4,
+   "estimatedAge": 71,
+   "remainingYears": 46.5,
+   "remainingDays": 16967,
+   "lifeUsedPercent": 34.5,
+   "estimatedYear": 2073,
+   "disclaimer": "Just for fun — a rough population-average estimate, not a medical prediction."
+  },
+  "kundali": {
+   "input": {
+    "date": "2002-05-13",
+    "time": "10:00",
+    "lat": 28.2096,
+    "lon": 83.9856,
+    "placeName": "Pokhara",
+    "timezone": "Asia/Kathmandu",
+    "utc": "2002-05-13T04:15:00.000Z",
+    "localOffset": "+05:45"
+   },
+   "ayanamsa": 23.8901,
+   "lagna": {
+    "lon": 94.1155,
+    "sign": 3,
+    "rashi": "Karka (Cancer)",
+    "degree": 4.12,
+    "nakshatra": {
+     "index": 7,
+     "name": "Pushya",
+     "pada": 1,
+     "lord": "Sa",
+     "fraction": 0.05866324984635835
+    }
+   },
+   "moonSign": {
+    "sign": 1,
+    "rashi": "Vrishabha (Taurus)"
+   },
+   "sunSign": {
+    "sign": 0,
+    "rashi": "Mesha (Aries)"
+   },
+   "planets": [
+    {
+     "key": "Su",
+     "name": "Sun",
+     "lon": 28.3543,
+     "sign": 0,
+     "rashi": "Mesha (Aries)",
+     "degree": 28.35,
+     "house": 10,
+     "retrograde": false,
+     "nakshatra": {
+      "index": 2,
+      "name": "Krittika",
+      "pada": 1,
+      "lord": "Su",
+      "fraction": 0.12657166963022765
+     }
+    },
+    {
+     "key": "Mo",
+     "name": "Moon",
+     "lon": 36.7312,
+     "sign": 1,
+     "rashi": "Vrishabha (Taurus)",
+     "degree": 6.73,
+     "house": 11,
+     "retrograde": false,
+     "nakshatra": {
+      "index": 2,
+      "name": "Krittika",
+      "pada": 4,
+      "lord": "Su",
+      "fraction": 0.7548370508935817
+     }
+    },
+    {
+     "key": "Ma",
+     "name": "Mars",
+     "lon": 55.9709,
+     "sign": 1,
+     "rashi": "Vrishabha (Taurus)",
+     "degree": 25.97,
+     "house": 11,
+     "retrograde": false,
+     "nakshatra": {
+      "index": 4,
+      "name": "Mrigashira",
+      "pada": 1,
+      "lord": "Ma",
+      "fraction": 0.1978159355720761
+     }
+    },
+    {
+     "key": "Me",
+     "name": "Mercury",
+     "lon": 45.8217,
+     "sign": 1,
+     "rashi": "Vrishabha (Taurus)",
+     "degree": 15.82,
+     "house": 11,
+     "retrograde": false,
+     "nakshatra": {
+      "index": 3,
+      "name": "Rohini",
+      "pada": 2,
+      "lord": "Mo",
+      "fraction": 0.43662568312931554
+     }
+    },
+    {
+     "key": "Ju",
+     "name": "Jupiter",
+     "lon": 79.1026,
+     "sign": 2,
+     "rashi": "Mithuna (Gemini)",
+     "degree": 19.1,
+     "house": 12,
+     "retrograde": false,
+     "nakshatra": {
+      "index": 5,
+      "name": "Ardra",
+      "pada": 4,
+      "lord": "Ra",
+      "fraction": 0.9326936823658654
+     }
+    },
+    {
+     "key": "Ve",
+     "name": "Venus",
+     "lon": 57.2366,
+     "sign": 1,
+     "rashi": "Vrishabha (Taurus)",
+     "degree": 27.24,
+     "house": 11,
+     "retrograde": false,
+     "nakshatra": {
+      "index": 4,
+      "name": "Mrigashira",
+      "pada": 2,
+      "lord": "Ma",
+      "fraction": 0.29274604983039704
+     }
+    },
+    {
+     "key": "Sa",
+     "name": "Saturn",
+     "lon": 51.0809,
+     "sign": 1,
+     "rashi": "Vrishabha (Taurus)",
+     "degree": 21.08,
+     "house": 11,
+     "retrograde": false,
+     "nakshatra": {
+      "index": 3,
+      "name": "Rohini",
+      "pada": 4,
+      "lord": "Mo",
+      "fraction": 0.8310667200189696
+     }
+    },
+    {
+     "key": "Ra",
+     "name": "Rahu",
+     "lon": 55.4724,
+     "sign": 1,
+     "rashi": "Vrishabha (Taurus)",
+     "degree": 25.47,
+     "house": 11,
+     "retrograde": true,
+     "nakshatra": {
+      "index": 4,
+      "name": "Mrigashira",
+      "pada": 1,
+      "lord": "Ma",
+      "fraction": 0.1604323104240093
+     }
+    },
+    {
+     "key": "Ke",
+     "name": "Ketu",
+     "lon": 235.4724,
+     "sign": 7,
+     "rashi": "Vrishchika (Scorpio)",
+     "degree": 25.47,
+     "house": 5,
+     "retrograde": true,
+     "nakshatra": {
+      "index": 17,
+      "name": "Jyeshtha",
+      "pada": 3,
+      "lord": "Me",
+      "fraction": 0.6604323104240044
+     }
+    }
+   ],
+   "dasha": {
+    "birthNakshatra": {
+     "index": 2,
+     "name": "Krittika",
+     "pada": 4,
+     "lord": "Su",
+     "fraction": 0.7548370508935817
+    },
+    "mahadashas": [
+     {
+      "lord": "Su",
+      "years": 6,
+      "start": "1997-10-31T22:50:25.696Z",
+      "end": "2003-11-01T10:50:25.696Z",
+      "antars": [
+       {
+        "lord": "Su",
+        "start": "1997-10-31T22:50:25.696Z",
+        "end": "1998-02-18T12:38:25.696Z"
+       },
+       {
+        "lord": "Mo",
+        "start": "1998-02-18T12:38:25.696Z",
+        "end": "1998-08-20T03:38:25.696Z"
+       },
+       {
+        "lord": "Ma",
+        "start": "1998-08-20T03:38:25.696Z",
+        "end": "1998-12-25T23:44:25.696Z"
+       },
+       {
+        "lord": "Ra",
+        "start": "1998-12-25T23:44:25.696Z",
+        "end": "1999-11-19T17:08:25.696Z"
+       },
+       {
+        "lord": "Ju",
+        "start": "1999-11-19T17:08:25.696Z",
+        "end": "2000-09-06T21:56:25.696Z"
+       },
+       {
+        "lord": "Sa",
+        "start": "2000-09-06T21:56:25.696Z",
+        "end": "2001-08-19T21:38:25.696Z"
+       },
+       {
+        "lord": "Me",
+        "start": "2001-08-19T21:38:25.696Z",
+        "end": "2002-06-26T08:44:25.696Z"
+       },
+       {
+        "lord": "Ke",
+        "start": "2002-06-26T08:44:25.696Z",
+        "end": "2002-11-01T04:50:25.696Z"
+       },
+       {
+        "lord": "Ve",
+        "start": "2002-11-01T04:50:25.696Z",
+        "end": "2003-11-01T10:50:25.696Z"
+       }
+      ]
+     },
+     {
+      "lord": "Mo",
+      "years": 10,
+      "start": "2003-11-01T10:50:25.696Z",
+      "end": "2013-10-31T22:50:25.696Z",
+      "antars": [
+       {
+        "lord": "Mo",
+        "start": "2003-11-01T10:50:25.696Z",
+        "end": "2004-08-31T19:50:25.696Z"
+       },
+       {
+        "lord": "Ma",
+        "start": "2004-08-31T19:50:25.696Z",
+        "end": "2005-04-01T21:20:25.696Z"
+       },
+       {
+        "lord": "Ra",
+        "start": "2005-04-01T21:20:25.696Z",
+        "end": "2006-10-01T18:20:25.696Z"
+       },
+       {
+        "lord": "Ju",
+        "start": "2006-10-01T18:20:25.696Z",
+        "end": "2008-01-31T18:20:25.696Z"
+       },
+       {
+        "lord": "Sa",
+        "start": "2008-01-31T18:20:25.696Z",
+        "end": "2009-09-01T01:50:25.696Z"
+       },
+       {
+        "lord": "Me",
+        "start": "2009-09-01T01:50:25.696Z",
+        "end": "2011-01-31T12:20:25.696Z"
+       },
+       {
+        "lord": "Ke",
+        "start": "2011-01-31T12:20:25.696Z",
+        "end": "2011-09-01T13:50:25.696Z"
+       },
+       {
+        "lord": "Ve",
+        "start": "2011-09-01T13:50:25.696Z",
+        "end": "2013-05-02T07:50:25.696Z"
+       },
+       {
+        "lord": "Su",
+        "start": "2013-05-02T07:50:25.696Z",
+        "end": "2013-10-31T22:50:25.696Z"
+       }
+      ]
+     },
+     {
+      "lord": "Ma",
+      "years": 7,
+      "start": "2013-10-31T22:50:25.696Z",
+      "end": "2020-10-31T16:50:25.696Z",
+      "antars": [
+       {
+        "lord": "Ma",
+        "start": "2013-10-31T22:50:25.696Z",
+        "end": "2014-03-30T02:17:25.696Z"
+       },
+       {
+        "lord": "Ra",
+        "start": "2014-03-30T02:17:25.696Z",
+        "end": "2015-04-17T14:35:25.696Z"
+       },
+       {
+        "lord": "Ju",
+        "start": "2015-04-17T14:35:25.696Z",
+        "end": "2016-03-23T12:11:25.696Z"
+       },
+       {
+        "lord": "Sa",
+        "start": "2016-03-23T12:11:25.696Z",
+        "end": "2017-05-02T07:50:25.696Z"
+       },
+       {
+        "lord": "Me",
+        "start": "2017-05-02T07:50:25.696Z",
+        "end": "2018-04-29T12:47:25.696Z"
+       },
+       {
+        "lord": "Ke",
+        "start": "2018-04-29T12:47:25.696Z",
+        "end": "2018-09-25T16:14:25.696Z"
+       },
+       {
+        "lord": "Ve",
+        "start": "2018-09-25T16:14:25.696Z",
+        "end": "2019-11-25T19:14:25.696Z"
+       },
+       {
+        "lord": "Su",
+        "start": "2019-11-25T19:14:25.696Z",
+        "end": "2020-04-01T15:20:25.696Z"
+       },
+       {
+        "lord": "Mo",
+        "start": "2020-04-01T15:20:25.696Z",
+        "end": "2020-10-31T16:50:25.696Z"
+       }
+      ]
+     },
+     {
+      "lord": "Ra",
+      "years": 18,
+      "start": "2020-10-31T16:50:25.696Z",
+      "end": "2038-11-01T04:50:25.696Z",
+      "antars": [
+       {
+        "lord": "Ra",
+        "start": "2020-10-31T16:50:25.696Z",
+        "end": "2023-07-14T21:02:25.696Z"
+       },
+       {
+        "lord": "Ju",
+        "start": "2023-07-14T21:02:25.696Z",
+        "end": "2025-12-07T11:26:25.696Z"
+       },
+       {
+        "lord": "Sa",
+        "start": "2025-12-07T11:26:25.696Z",
+        "end": "2028-10-13T10:32:25.696Z"
+       },
+       {
+        "lord": "Me",
+        "start": "2028-10-13T10:32:25.696Z",
+        "end": "2031-05-02T19:50:25.696Z"
+       },
+       {
+        "lord": "Ke",
+        "start": "2031-05-02T19:50:25.696Z",
+        "end": "2032-05-20T08:08:25.696Z"
+       },
+       {
+        "lord": "Ve",
+        "start": "2032-05-20T08:08:25.696Z",
+        "end": "2035-05-21T02:08:25.696Z"
+       },
+       {
+        "lord": "Su",
+        "start": "2035-05-21T02:08:25.696Z",
+        "end": "2036-04-13T19:32:25.696Z"
+       },
+       {
+        "lord": "Mo",
+        "start": "2036-04-13T19:32:25.696Z",
+        "end": "2037-10-13T16:32:25.696Z"
+       },
+       {
+        "lord": "Ma",
+        "start": "2037-10-13T16:32:25.696Z",
+        "end": "2038-11-01T04:50:25.696Z"
+       }
+      ]
+     },
+     {
+      "lord": "Ju",
+      "years": 16,
+      "start": "2038-11-01T04:50:25.696Z",
+      "end": "2054-11-01T04:50:25.696Z",
+      "antars": [
+       {
+        "lord": "Ju",
+        "start": "2038-11-01T04:50:25.696Z",
+        "end": "2040-12-19T09:38:25.696Z"
+       },
+       {
+        "lord": "Sa",
+        "start": "2040-12-19T09:38:25.696Z",
+        "end": "2043-07-02T16:50:25.696Z"
+       },
+       {
+        "lord": "Me",
+        "start": "2043-07-02T16:50:25.696Z",
+        "end": "2045-10-07T14:26:25.696Z"
+       },
+       {
+        "lord": "Ke",
+        "start": "2045-10-07T14:26:25.696Z",
+        "end": "2046-09-13T12:02:25.696Z"
+       },
+       {
+        "lord": "Ve",
+        "start": "2046-09-13T12:02:25.696Z",
+        "end": "2049-05-14T12:02:25.696Z"
+       },
+       {
+        "lord": "Su",
+        "start": "2049-05-14T12:02:25.696Z",
+        "end": "2050-03-02T16:50:25.696Z"
+       },
+       {
+        "lord": "Mo",
+        "start": "2050-03-02T16:50:25.696Z",
+        "end": "2051-07-02T16:50:25.696Z"
+       },
+       {
+        "lord": "Ma",
+        "start": "2051-07-02T16:50:25.696Z",
+        "end": "2052-06-07T14:26:25.696Z"
+       },
+       {
+        "lord": "Ra",
+        "start": "2052-06-07T14:26:25.696Z",
+        "end": "2054-11-01T04:50:25.696Z"
+       }
+      ]
+     },
+     {
+      "lord": "Sa",
+      "years": 19,
+      "start": "2054-11-01T04:50:25.696Z",
+      "end": "2073-10-31T22:50:25.696Z",
+      "antars": [
+       {
+        "lord": "Sa",
+        "start": "2054-11-01T04:50:25.696Z",
+        "end": "2057-11-03T23:53:25.696Z"
+       },
+       {
+        "lord": "Me",
+        "start": "2057-11-03T23:53:25.696Z",
+        "end": "2060-07-14T03:02:25.696Z"
+       },
+       {
+        "lord": "Ke",
+        "start": "2060-07-14T03:02:25.696Z",
+        "end": "2061-08-22T22:41:25.696Z"
+       },
+       {
+        "lord": "Ve",
+        "start": "2061-08-22T22:41:25.696Z",
+        "end": "2064-10-22T13:41:25.696Z"
+       },
+       {
+        "lord": "Su",
+        "start": "2064-10-22T13:41:25.696Z",
+        "end": "2065-10-04T13:23:25.696Z"
+       },
+       {
+        "lord": "Mo",
+        "start": "2065-10-04T13:23:25.696Z",
+        "end": "2067-05-05T20:53:25.696Z"
+       },
+       {
+        "lord": "Ma",
+        "start": "2067-05-05T20:53:25.696Z",
+        "end": "2068-06-13T16:32:25.696Z"
+       },
+       {
+        "lord": "Ra",
+        "start": "2068-06-13T16:32:25.696Z",
+        "end": "2071-04-20T15:38:25.696Z"
+       },
+       {
+        "lord": "Ju",
+        "start": "2071-04-20T15:38:25.696Z",
+        "end": "2073-10-31T22:50:25.696Z"
+       }
+      ]
+     },
+     {
+      "lord": "Me",
+      "years": 17,
+      "start": "2073-10-31T22:50:25.696Z",
+      "end": "2090-11-01T04:50:25.696Z",
+      "antars": [
+       {
+        "lord": "Me",
+        "start": "2073-10-31T22:50:25.696Z",
+        "end": "2076-03-29T14:17:25.696Z"
+       },
+       {
+        "lord": "Ke",
+        "start": "2076-03-29T14:17:25.696Z",
+        "end": "2077-03-26T19:14:25.696Z"
+       },
+       {
+        "lord": "Ve",
+        "start": "2077-03-26T19:14:25.696Z",
+        "end": "2080-01-25T16:14:25.696Z"
+       },
+       {
+        "lord": "Su",
+        "start": "2080-01-25T16:14:25.696Z",
+        "end": "2080-12-01T03:20:25.696Z"
+       },
+       {
+        "lord": "Mo",
+        "start": "2080-12-01T03:20:25.696Z",
+        "end": "2082-05-02T13:50:25.696Z"
+       },
+       {
+        "lord": "Ma",
+        "start": "2082-05-02T13:50:25.696Z",
+        "end": "2083-04-29T18:47:25.696Z"
+       },
+       {
+        "lord": "Ra",
+        "start": "2083-04-29T18:47:25.696Z",
+        "end": "2085-11-16T04:05:25.696Z"
+       },
+       {
+        "lord": "Ju",
+        "start": "2085-11-16T04:05:25.696Z",
+        "end": "2088-02-22T01:41:25.696Z"
+       },
+       {
+        "lord": "Sa",
+        "start": "2088-02-22T01:41:25.696Z",
+        "end": "2090-11-01T04:50:25.696Z"
+       }
+      ]
+     },
+     {
+      "lord": "Ke",
+      "years": 7,
+      "start": "2090-11-01T04:50:25.696Z",
+      "end": "2097-10-31T22:50:25.696Z",
+      "antars": [
+       {
+        "lord": "Ke",
+        "start": "2090-11-01T04:50:25.696Z",
+        "end": "2091-03-30T08:17:25.696Z"
+       },
+       {
+        "lord": "Ve",
+        "start": "2091-03-30T08:17:25.696Z",
+        "end": "2092-05-29T11:17:25.696Z"
+       },
+       {
+        "lord": "Su",
+        "start": "2092-05-29T11:17:25.696Z",
+        "end": "2092-10-04T07:23:25.696Z"
+       },
+       {
+        "lord": "Mo",
+        "start": "2092-10-04T07:23:25.696Z",
+        "end": "2093-05-05T08:53:25.696Z"
+       },
+       {
+        "lord": "Ma",
+        "start": "2093-05-05T08:53:25.696Z",
+        "end": "2093-10-01T12:20:25.696Z"
+       },
+       {
+        "lord": "Ra",
+        "start": "2093-10-01T12:20:25.696Z",
+        "end": "2094-10-20T00:38:25.696Z"
+       },
+       {
+        "lord": "Ju",
+        "start": "2094-10-20T00:38:25.696Z",
+        "end": "2095-09-25T22:14:25.696Z"
+       },
+       {
+        "lord": "Sa",
+        "start": "2095-09-25T22:14:25.696Z",
+        "end": "2096-11-03T17:53:25.696Z"
+       },
+       {
+        "lord": "Me",
+        "start": "2096-11-03T17:53:25.696Z",
+        "end": "2097-10-31T22:50:25.696Z"
+       }
+      ]
+     },
+     {
+      "lord": "Ve",
+      "years": 20,
+      "start": "2097-10-31T22:50:25.696Z",
+      "end": "2117-11-01T22:50:25.696Z",
+      "antars": [
+       {
+        "lord": "Ve",
+        "start": "2097-10-31T22:50:25.696Z",
+        "end": "2101-03-03T10:50:25.696Z"
+       },
+       {
+        "lord": "Su",
+        "start": "2101-03-03T10:50:25.696Z",
+        "end": "2102-03-03T16:50:25.696Z"
+       },
+       {
+        "lord": "Mo",
+        "start": "2102-03-03T16:50:25.696Z",
+        "end": "2103-11-02T10:50:25.696Z"
+       },
+       {
+        "lord": "Ma",
+        "start": "2103-11-02T10:50:25.696Z",
+        "end": "2105-01-01T13:50:25.696Z"
+       },
+       {
+        "lord": "Ra",
+        "start": "2105-01-01T13:50:25.696Z",
+        "end": "2108-01-02T07:50:25.696Z"
+       },
+       {
+        "lord": "Ju",
+        "start": "2108-01-02T07:50:25.696Z",
+        "end": "2110-09-02T07:50:25.696Z"
+       },
+       {
+        "lord": "Sa",
+        "start": "2110-09-02T07:50:25.696Z",
+        "end": "2113-11-01T22:50:25.696Z"
+       },
+       {
+        "lord": "Me",
+        "start": "2113-11-01T22:50:25.696Z",
+        "end": "2116-09-01T19:50:25.696Z"
+       },
+       {
+        "lord": "Ke",
+        "start": "2116-09-01T19:50:25.696Z",
+        "end": "2117-11-01T22:50:25.696Z"
+       }
+      ]
+     }
+    ]
+   },
+   "current": {
+    "maha": "Ra",
+    "antar": "Sa",
+    "mahaEnd": "2038-11-01T04:50:25.696Z",
+    "antarEnd": "2028-10-13T10:32:25.696Z"
+   },
+   "challengingPeriods": [
+    {
+     "kind": "Sade Sati",
+     "level": "notable",
+     "start": "2002-05-13T04:15:00.000Z",
+     "end": "2005-05-27T04:15:00.000Z",
+     "ageFrom": 0,
+     "ageTo": 3,
+     "reason": "Saturn transits the 12th, 1st and 2nd signs from your Moon sign — traditionally a slow, testing phase.",
+     "guidance": "Traditionally a time for patience, steady routines, good sleep and regular health check-ups."
+    },
+    {
+     "kind": "Moon–Saturn dasha",
+     "level": "mild",
+     "start": "2008-01-31T18:20:25.696Z",
+     "end": "2009-09-01T01:50:25.696Z",
+     "ageFrom": 5.7,
+     "ageTo": 7.3,
+     "reason": "Traditionally considered challenging because Saturn is linked to your 8th house.",
+     "guidance": "A good period to be a little more careful with health, rest and big decisions."
+    },
+    {
+     "kind": "Mars–Rahu dasha",
+     "level": "mild",
+     "start": "2014-03-30T02:17:25.696Z",
+     "end": "2015-04-17T14:35:25.696Z",
+     "ageFrom": 11.9,
+     "ageTo": 12.9,
+     "reason": "Traditionally considered challenging because both Mars and Rahu are natural malefics.",
+     "guidance": "A good period to be a little more careful with health, rest and big decisions."
+    },
+    {
+     "kind": "Mars–Saturn dasha",
+     "level": "notable",
+     "start": "2016-03-23T12:11:25.696Z",
+     "end": "2017-05-02T07:50:25.696Z",
+     "ageFrom": 13.9,
+     "ageTo": 15,
+     "reason": "Traditionally considered challenging because both Mars and Saturn are natural malefics and Saturn is linked to your 8th house.",
+     "guidance": "A good period to be a little more careful with health, rest and big decisions."
+    },
+    {
+     "kind": "Ashtama Shani",
+     "level": "mild",
+     "start": "2017-01-27T04:15:00.000Z",
+     "end": "2020-01-27T04:15:00.000Z",
+     "ageFrom": 14.7,
+     "ageTo": 17.7,
+     "reason": "Saturn transits the 8th sign from your Moon sign.",
+     "guidance": "Traditionally advised to avoid overwork and take care with stress and rest."
+    },
+    {
+     "kind": "Mars–Ketu dasha",
+     "level": "mild",
+     "start": "2018-04-29T12:47:25.696Z",
+     "end": "2018-09-25T16:14:25.696Z",
+     "ageFrom": 16,
+     "ageTo": 16.4,
+     "reason": "Traditionally considered challenging because both Mars and Ketu are natural malefics.",
+     "guidance": "A good period to be a little more careful with health, rest and big decisions."
+    },
+    {
+     "kind": "Rahu–Saturn dasha",
+     "level": "notable",
+     "start": "2025-12-07T11:26:25.696Z",
+     "end": "2028-10-13T10:32:25.696Z",
+     "ageFrom": 23.6,
+     "ageTo": 26.4,
+     "reason": "Traditionally considered challenging because both Rahu and Saturn are natural malefics and Saturn is linked to your 8th house.",
+     "guidance": "A good period to be a little more careful with health, rest and big decisions."
+    },
+    {
+     "kind": "Sade Sati",
+     "level": "notable",
+     "start": "2027-06-04T04:15:00.000Z",
+     "end": "2034-07-15T04:15:00.000Z",
+     "ageFrom": 25.1,
+     "ageTo": 32.2,
+     "reason": "Saturn transits the 12th, 1st and 2nd signs from your Moon sign — traditionally a slow, testing phase.",
+     "guidance": "Traditionally a time for patience, steady routines, good sleep and regular health check-ups."
+    },
+    {
+     "kind": "Rahu–Ketu dasha",
+     "level": "mild",
+     "start": "2031-05-02T19:50:25.696Z",
+     "end": "2032-05-20T08:08:25.696Z",
+     "ageFrom": 29,
+     "ageTo": 30,
+     "reason": "Traditionally considered challenging because both Rahu and Ketu are natural malefics.",
+     "guidance": "A good period to be a little more careful with health, rest and big decisions."
+    },
+    {
+     "kind": "Rahu–Mars dasha",
+     "level": "mild",
+     "start": "2037-10-13T16:32:25.696Z",
+     "end": "2038-11-01T04:50:25.696Z",
+     "ageFrom": 35.4,
+     "ageTo": 36.5,
+     "reason": "Traditionally considered challenging because both Rahu and Mars are natural malefics.",
+     "guidance": "A good period to be a little more careful with health, rest and big decisions."
+    },
+    {
+     "kind": "Jupiter–Jupiter dasha",
+     "level": "mild",
+     "start": "2038-11-01T04:50:25.696Z",
+     "end": "2040-12-19T09:38:25.696Z",
+     "ageFrom": 36.5,
+     "ageTo": 38.6,
+     "reason": "Traditionally considered challenging because both lords rule difficult houses (6/8/12).",
+     "guidance": "A good period to be a little more careful with health, rest and big decisions."
+    },
+    {
+     "kind": "Jupiter–Saturn dasha",
+     "level": "mild",
+     "start": "2040-12-19T09:38:25.696Z",
+     "end": "2043-07-02T16:50:25.696Z",
+     "ageFrom": 38.6,
+     "ageTo": 41.1,
+     "reason": "Traditionally considered challenging because Saturn is linked to your 8th house.",
+     "guidance": "A good period to be a little more careful with health, rest and big decisions."
+    },
+    {
+     "kind": "Jupiter–Mercury dasha",
+     "level": "mild",
+     "start": "2043-07-02T16:50:25.696Z",
+     "end": "2045-10-07T14:26:25.696Z",
+     "ageFrom": 41.1,
+     "ageTo": 43.4,
+     "reason": "Traditionally considered challenging because both lords rule difficult houses (6/8/12).",
+     "guidance": "A good period to be a little more careful with health, rest and big decisions."
+    },
+    {
+     "kind": "Ashtama Shani",
+     "level": "mild",
+     "start": "2046-12-09T04:15:00.000Z",
+     "end": "2049-12-05T04:15:00.000Z",
+     "ageFrom": 44.6,
+     "ageTo": 47.6,
+     "reason": "Saturn transits the 8th sign from your Moon sign.",
+     "guidance": "Traditionally advised to avoid overwork and take care with stress and rest."
+    },
+    {
+     "kind": "Saturn–Saturn dasha",
+     "level": "mild",
+     "start": "2054-11-01T04:50:25.696Z",
+     "end": "2057-11-03T23:53:25.696Z",
+     "ageFrom": 52.5,
+     "ageTo": 55.5,
+     "reason": "Traditionally considered challenging because Saturn is linked to your 8th house.",
+     "guidance": "A good period to be a little more careful with health, rest and big decisions."
+    },
+    {
+     "kind": "Sade Sati",
+     "level": "notable",
+     "start": "2057-04-09T04:15:00.000Z",
+     "end": "2064-05-11T04:15:00.000Z",
+     "ageFrom": 54.9,
+     "ageTo": 62,
+     "reason": "Saturn transits the 12th, 1st and 2nd signs from your Moon sign — traditionally a slow, testing phase.",
+     "guidance": "Traditionally a time for patience, steady routines, good sleep and regular health check-ups."
+    },
+    {
+     "kind": "Saturn–Mercury dasha",
+     "level": "mild",
+     "start": "2057-11-03T23:53:25.696Z",
+     "end": "2060-07-14T03:02:25.696Z",
+     "ageFrom": 55.5,
+     "ageTo": 58.2,
+     "reason": "Traditionally considered challenging because both lords rule difficult houses (6/8/12).",
+     "guidance": "A good period to be a little more careful with health, rest and big decisions."
+    },
+    {
+     "kind": "Saturn–Ketu dasha",
+     "level": "mild",
+     "start": "2060-07-14T03:02:25.696Z",
+     "end": "2061-08-22T22:41:25.696Z",
+     "ageFrom": 58.2,
+     "ageTo": 59.3,
+     "reason": "Traditionally considered challenging because both Saturn and Ketu are natural malefics.",
+     "guidance": "A good period to be a little more careful with health, rest and big decisions."
+    },
+    {
+     "kind": "Saturn–Mars dasha",
+     "level": "mild",
+     "start": "2067-05-05T20:53:25.696Z",
+     "end": "2068-06-13T16:32:25.696Z",
+     "ageFrom": 65,
+     "ageTo": 66.1,
+     "reason": "Traditionally considered challenging because both Saturn and Mars are natural malefics.",
+     "guidance": "A good period to be a little more careful with health, rest and big decisions."
+    },
+    {
+     "kind": "Saturn–Rahu dasha",
+     "level": "mild",
+     "start": "2068-06-13T16:32:25.696Z",
+     "end": "2071-04-20T15:38:25.696Z",
+     "ageFrom": 66.1,
+     "ageTo": 68.9,
+     "reason": "Traditionally considered challenging because both Saturn and Rahu are natural malefics.",
+     "guidance": "A good period to be a little more careful with health, rest and big decisions."
+    },
+    {
+     "kind": "Saturn–Jupiter dasha",
+     "level": "mild",
+     "start": "2071-04-20T15:38:25.696Z",
+     "end": "2073-10-31T22:50:25.696Z",
+     "ageFrom": 68.9,
+     "ageTo": 71.5,
+     "reason": "Traditionally considered challenging because both lords rule difficult houses (6/8/12).",
+     "guidance": "A good period to be a little more careful with health, rest and big decisions."
+    },
+    {
+     "kind": "Mercury–Mercury dasha",
+     "level": "mild",
+     "start": "2073-10-31T22:50:25.696Z",
+     "end": "2076-03-29T14:17:25.696Z",
+     "ageFrom": 71.5,
+     "ageTo": 73.9,
+     "reason": "Traditionally considered challenging because both lords rule difficult houses (6/8/12).",
+     "guidance": "A good period to be a little more careful with health, rest and big decisions."
+    },
+    {
+     "kind": "Ashtama Shani",
+     "level": "mild",
+     "start": "2076-01-18T04:15:00.000Z",
+     "end": "2079-01-17T04:15:00.000Z",
+     "ageFrom": 73.7,
+     "ageTo": 76.7,
+     "reason": "Saturn transits the 8th sign from your Moon sign.",
+     "guidance": "Traditionally advised to avoid overwork and take care with stress and rest."
+    },
+    {
+     "kind": "Mercury–Jupiter dasha",
+     "level": "mild",
+     "start": "2085-11-16T04:05:25.696Z",
+     "end": "2088-02-22T01:41:25.696Z",
+     "ageFrom": 83.5,
+     "ageTo": 85.8,
+     "reason": "Traditionally considered challenging because both lords rule difficult houses (6/8/12).",
+     "guidance": "A good period to be a little more careful with health, rest and big decisions."
+    },
+    {
+     "kind": "Sade Sati",
+     "level": "notable",
+     "start": "2086-05-22T04:15:00.000Z",
+     "end": "2093-07-05T04:15:00.000Z",
+     "ageFrom": 84,
+     "ageTo": 91.1,
+     "reason": "Saturn transits the 12th, 1st and 2nd signs from your Moon sign — traditionally a slow, testing phase.",
+     "guidance": "Traditionally a time for patience, steady routines, good sleep and regular health check-ups."
+    },
+    {
+     "kind": "Mercury–Saturn dasha",
+     "level": "mild",
+     "start": "2088-02-22T01:41:25.696Z",
+     "end": "2090-11-01T04:50:25.696Z",
+     "ageFrom": 85.8,
+     "ageTo": 88.5,
+     "reason": "Traditionally considered challenging because Saturn is linked to your 8th house.",
+     "guidance": "A good period to be a little more careful with health, rest and big decisions."
+    },
+    {
+     "kind": "Ketu–Mars dasha",
+     "level": "mild",
+     "start": "2093-05-05T08:53:25.696Z",
+     "end": "2093-10-01T12:20:25.696Z",
+     "ageFrom": 91,
+     "ageTo": 91.4,
+     "reason": "Traditionally considered challenging because both Ketu and Mars are natural malefics.",
+     "guidance": "A good period to be a little more careful with health, rest and big decisions."
+    },
+    {
+     "kind": "Ketu–Rahu dasha",
+     "level": "mild",
+     "start": "2093-10-01T12:20:25.696Z",
+     "end": "2094-10-20T00:38:25.696Z",
+     "ageFrom": 91.4,
+     "ageTo": 92.4,
+     "reason": "Traditionally considered challenging because both Ketu and Rahu are natural malefics.",
+     "guidance": "A good period to be a little more careful with health, rest and big decisions."
+    },
+    {
+     "kind": "Ketu–Saturn dasha",
+     "level": "notable",
+     "start": "2095-09-25T22:14:25.696Z",
+     "end": "2096-11-03T17:53:25.696Z",
+     "ageFrom": 93.4,
+     "ageTo": 94.5,
+     "reason": "Traditionally considered challenging because both Ketu and Saturn are natural malefics and Saturn is linked to your 8th house.",
+     "guidance": "A good period to be a little more careful with health, rest and big decisions."
+    }
+   ],
+   "rashis": [
+    "Mesha (Aries)",
+    "Vrishabha (Taurus)",
+    "Mithuna (Gemini)",
+    "Karka (Cancer)",
+    "Simha (Leo)",
+    "Kanya (Virgo)",
+    "Tula (Libra)",
+    "Vrishchika (Scorpio)",
+    "Dhanu (Sagittarius)",
+    "Makara (Capricorn)",
+    "Kumbha (Aquarius)",
+    "Meena (Pisces)"
+   ],
+   "note": "Traditional Vedic astrology content for cultural interest. It has no proven predictive power over health or lifespan.",
+   "timeUnknown": false
+  },
+  "inputSex": "male",
+  "inputHabits": {
+   "sleep": 6,
+   "smoking": "never",
+   "alcohol": 4
+  }
+ }
+}

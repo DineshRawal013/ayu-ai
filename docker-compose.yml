@@ -1,12 +1,18 @@
-# Ayu AI: 4 containers on two private networks.
-#   frontend-net: caddy, frontend, backend  (web tier: browser traffic reaches the API)
-#   backend-net:  backend, postgres, ollama (data tier: only the backend talks to DB and AI)
-#   backend is on both, so it is the only bridge between the tiers.
+# Ayu AI v2: microservices on four private networks.
+#
+#   frontend-net:  caddy, frontend, gateway        (web tier: browser traffic reaches the API gateway)
+#   services-net:  gateway, health-svc, kundali-svc, ai-svc   (internal: no internet access)
+#   data-net:      gateway, postgres               (internal: only the gateway reaches the database)
+#   ai-net:        ai-svc, ollama                  (only ai-svc reaches the model; not internal,
+#                                                   because ollama downloads the model on first start)
+#
 #   caddy (optional)  -> HTTPS on 80/443 in front of frontend (profile "https", Azure only)
-#   frontend (nginx)  -> public port 80, proxies /api to backend
-#   backend (Express) -> talks to postgres and ollama internally
-#   postgres          -> no public port
-#   ollama            -> no public port, pulls the model on first start
+#   frontend (nginx)  -> public port 80, proxies /api to gateway
+#   gateway           -> public API, results DB, share links, place search; calls the services
+#   health-svc        -> age, health metrics, lifespan estimate
+#   kundali-svc       -> birth chart, dasha, transits (Swiss Ephemeris)
+#   ai-svc            -> insight and lifespan-guess prompts for Ollama
+#   postgres, ollama  -> no public ports
 #
 # Local:   docker compose up --build
 # Azure:   images come from GHCR (see .github/workflows/deploy.yml)
@@ -20,7 +26,7 @@ services:
     ports:
       - "${HTTP_PORT:-80}:80"
     depends_on:
-      backend:
+      gateway:
         condition: service_healthy
     networks:
       - frontend-net
@@ -47,24 +53,58 @@ services:
       - frontend-net
     restart: unless-stopped
 
-  backend:
-    build: ./backend
-    image: ghcr.io/${GHCR_OWNER:-dineshrawal013}/ayu-ai-backend:${TAG:-latest}
+  gateway:
+    build: ./services/gateway
+    image: ghcr.io/${GHCR_OWNER:-dineshrawal013}/ayu-ai-gateway:${TAG:-latest}
     environment:
       # Password goes in PGPASSWORD (read by pg) so symbols in it can't break the URL.
       DATABASE_URL: postgres://${POSTGRES_USER:-ayu}@postgres:5432/${POSTGRES_DB:-ayu}
       PGPASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env}
-      OLLAMA_URL: http://ollama:11434
-      OLLAMA_MODEL: ${OLLAMA_MODEL:-qwen2.5:1.5b}
+      HEALTH_URL: http://health-svc:3001
+      KUNDALI_URL: http://kundali-svc:3002
+      AI_URL: http://ai-svc:3003
       NOMINATIM_USER_AGENT: ${NOMINATIM_USER_AGENT:-AyuAI/1.0 (https://github.com/DineshRawal013/ayu-ai)}
     depends_on:
       postgres:
         condition: service_healthy
+      health-svc:
+        condition: service_healthy
+      kundali-svc:
+        condition: service_healthy
+      ai-svc:
+        condition: service_healthy
+    networks:
+      - frontend-net
+      - services-net
+      - data-net
+    restart: unless-stopped
+
+  health-svc:
+    build: ./services/health-svc
+    image: ghcr.io/${GHCR_OWNER:-dineshrawal013}/ayu-ai-health-svc:${TAG:-latest}
+    networks:
+      - services-net
+    restart: unless-stopped
+
+  kundali-svc:
+    build: ./services/kundali-svc
+    image: ghcr.io/${GHCR_OWNER:-dineshrawal013}/ayu-ai-kundali-svc:${TAG:-latest}
+    networks:
+      - services-net
+    restart: unless-stopped
+
+  ai-svc:
+    build: ./services/ai-svc
+    image: ghcr.io/${GHCR_OWNER:-dineshrawal013}/ayu-ai-ai-svc:${TAG:-latest}
+    environment:
+      OLLAMA_URL: http://ollama:11434
+      OLLAMA_MODEL: ${OLLAMA_MODEL:-qwen2.5:1.5b}
+    depends_on:
       ollama:
         condition: service_started
     networks:
-      - frontend-net
-      - backend-net
+      - services-net
+      - ai-net
     restart: unless-stopped
 
   postgres:
@@ -81,7 +121,7 @@ services:
       timeout: 5s
       retries: 20
     networks:
-      - backend-net
+      - data-net
     restart: unless-stopped
 
   ollama:
@@ -100,14 +140,20 @@ services:
       timeout: 10s
       retries: 5
     networks:
-      - backend-net
+      - ai-net
     restart: unless-stopped
 
 networks:
   frontend-net:
     driver: bridge
+  services-net:
+    driver: bridge
+    internal: true
+  data-net:
+    driver: bridge
+    internal: true
   # Not "internal: true": ollama needs internet to pull the model on first start.
-  backend-net:
+  ai-net:
     driver: bridge
 
 volumes:

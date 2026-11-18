@@ -28,7 +28,7 @@ It merges two earlier projects, [age-calculator-website](https://github.com/Dine
 
 **AI insight**
 - Ollama running **qwen2.5:1.5b** in its own container, with no external API and no API key
-- The backend computes every number and the model only explains them, streamed word by word
+- The calculation services compute every number and the model only explains them, streamed word by word
 - Saved with the result, so a shared link shows the same text
 
 **History**
@@ -36,58 +36,68 @@ It merges two earlier projects, [age-calculator-website](https://github.com/Dine
 
 ## Architecture
 
+Ayu AI is built as **microservices**: an API gateway plus three stateless domain services, each in its own container with its own codebase, tests and image.
+
 ```mermaid
 flowchart LR
   B[Browser] -->|:80 / :443| F
   subgraph FN[frontend-net]
     C[caddy<br/>optional HTTPS] -.-> F[frontend<br/>nginx]
-    F -->|/api/* :3000| API[backend<br/>Node.js + Express<br/>Swiss Ephemeris]
+    F -->|/api/* :3000| G[gateway<br/>public API, results,<br/>share links, place search]
   end
-  subgraph BN[backend-net]
-    API -->|:5432| DB[(postgres)]
-    API -->|:11434| O[ollama<br/>qwen2.5:1.5b]
+  subgraph SN[services-net, internal]
+    G -->|:3001| H[health-svc<br/>age, health, lifespan]
+    G -->|:3002| K[kundali-svc<br/>Swiss Ephemeris]
+    G -->|:3003| A[ai-svc<br/>prompts, streaming]
   end
-  API -->|place search| N[OpenStreetMap<br/>Nominatim]
+  subgraph DN[data-net, internal]
+    G -->|:5432| DB[(postgres)]
+  end
+  subgraph AN[ai-net]
+    A -->|:11434| O[ollama<br/>qwen2.5:1.5b]
+  end
+  G -->|place search| N[OpenStreetMap<br/>Nominatim]
 ```
+
+### Services
+
+| Container | Source | Port | Role |
+|---|---|---|---|
+| `frontend` | `frontend/` (nginx 1.27) | 80 (public) | Static page, proxies `/api` to the gateway and streams the AI text |
+| `gateway` | `services/gateway/` | 3000 | The only public API: routes, orchestration, results DB, share links, AI caching and locks, place search |
+| `health-svc` | `services/health-svc/` | 3001 | Exact age, health metrics, alerts, 12-week projection, lifespan estimate |
+| `kundali-svc` | `services/kundali-svc/` | 3002 | Birth chart, dasha, challenging periods, planet transits (Swiss Ephemeris) |
+| `ai-svc` | `services/ai-svc/` | 3003 | Insight and lifespan-guess prompts for Ollama, streaming, output validation |
+| `postgres` | `postgres:16-alpine` | — | Anonymous result history (owned by the gateway) |
+| `ollama` | `ollama/ollama` | — | Local LLM, downloads the model on first start |
+| `caddy` (optional) | `caddy:2.8-alpine` | 80, 443 | HTTPS with Let's Encrypt (Azure only) |
+
+The three domain services are **stateless** and never call each other. The gateway composes their answers, so the browser sees the same API as before. Every service has `GET /healthz` and a Docker health check. A validation error from a service passes through the gateway unchanged; an unreachable service gives a 503 with a friendly message.
 
 ### Networks
 
-The containers are split into two Docker bridge networks, defined in `docker-compose.yml`:
-
-| Network | Containers | Purpose |
-|---|---|---|
-| `frontend-net` | `caddy`, `frontend`, `backend` | Web tier: browser traffic reaches the API |
-| `backend-net` | `backend`, `postgres`, `ollama` | Data tier: database and AI model |
-
-- The **backend is the only container on both networks**, so it is the single bridge between the tiers. The frontend talks to it only through the HTTP API (`http://backend:3000`), which is the contract between frontend and backend work.
-- The **frontend has no route to `postgres` or `ollama`**, and it does not hold the database password. If the frontend container were compromised, the attacker could only call the backend API, not reach the database or the model directly.
-- Containers find each other by service name (`backend`, `postgres`, `ollama`) through Docker's built-in DNS.
-- Only `frontend` (or `caddy` with HTTPS) publishes a port to the host. `backend`, `postgres` and `ollama` publish none.
-- `backend-net` is not marked `internal`, because `ollama` downloads the model from the internet on first start.
-
-| Container | Image | Public port | Role |
+| Network | Containers | Internet | Purpose |
 |---|---|---|---|
-| `frontend` | `nginx:1.27-alpine` | 80 | Static page, proxies `/api` and streams the AI text |
-| `backend` | `node:20-bookworm-slim` | — | All calculations, kundali, database, AI prompt |
-| `postgres` | `postgres:16-alpine` | — | Anonymous result history |
-| `ollama` | `ollama/ollama` | — | Local LLM, downloads the model on first start |
+| `frontend-net` | `caddy`, `frontend`, `gateway` | yes | Web tier: browser traffic reaches the gateway |
+| `services-net` | `gateway`, `health-svc`, `kundali-svc`, `ai-svc` | **no** (`internal`) | Gateway to domain services |
+| `data-net` | `gateway`, `postgres` | **no** (`internal`) | Only the gateway reaches the database |
+| `ai-net` | `ai-svc`, `ollama` | yes (model download) | Only ai-svc reaches the model |
+
+- Only `frontend` (or `caddy` with HTTPS) publishes a port to the host.
+- The frontend can reach only the gateway. The domain services cannot reach the database, and only ai-svc can reach Ollama.
+- Containers find each other by service name through Docker's built-in DNS.
 
 ```text
 ayu-ai/
-├── backend/            Express API
-│   ├── src/
-│   │   ├── server.js   routes
-│   │   ├── age.js      exact age
-│   │   ├── health.js   metrics, alerts, 12-week projection
-│   │   ├── lifespan.js fun lifespan estimate
-│   │   ├── kundali.js  Swiss Ephemeris, dasha, challenging periods, transits
-│   │   ├── ai.js       Ollama prompt + streaming
-│   │   ├── geo.js      Nominatim place search
-│   │   └── db.js       PostgreSQL
-│   ├── test/
-│   └── Dockerfile
+├── services/
+│   ├── gateway/        server.js (routes, runAnalysis), services.js (HTTP clients), db.js, geo.js
+│   ├── health-svc/     server.js, age.js, health.js, lifespan.js
+│   ├── kundali-svc/    server.js, kundali.js (native sweph module)
+│   └── ai-svc/         server.js, ai.js (Ollama prompts + streaming)
+│       (each has package.json, Dockerfile and test/)
 ├── frontend/           index.html, style.css, app.js, kundali.js, nginx.conf, Dockerfile
 ├── ollama/entrypoint.sh
+├── caddy/Caddyfile
 ├── deploy/setup-vm.sh
 ├── .github/workflows/deploy.yml
 └── docker-compose.yml
@@ -110,15 +120,15 @@ Open http://localhost (or http://localhost:8080). The first start downloads the 
 docker compose logs -f ollama
 ```
 
-Backend tests:
+Tests (each service has its own suite; ai-svc uses a fake Ollama):
 
 ```bash
-cd backend && npm ci && npm test
+cd services/gateway && npm ci && npm test       # likewise for health-svc, kundali-svc, ai-svc
 ```
 
 ## Deploy to Azure (VM + GitHub Actions)
 
-On every push to `main`, GitHub Actions runs the tests, builds the `backend` and `frontend` images, pushes them to GitHub Container Registry, then SSHes into the VM and restarts the containers.
+On every push to `main`, GitHub Actions runs the tests, builds the `frontend`, `gateway`, `health-svc`, `kundali-svc` and `ai-svc` images, pushes them to GitHub Container Registry, then SSHes into the VM and restarts the containers.
 
 ### 1. Create the VM
 
@@ -174,17 +184,20 @@ To save Azure credit, stop the VM when you aren't using it: `az vm deallocate -g
 
 ## API
 
+All endpoints are served by the **gateway**; it calls the internal services.
+
 | Method | Path | Purpose |
 |---|---|---|
 | `POST` | `/api/analyze` | Age, health, lifespan and kundali in one call; saves and returns an `id` |
 | `GET` | `/api/results/:id` | Load a saved reading |
 | `POST` | `/api/results/:id/insight` | Stream the AI insight (plain text) |
+| `POST` | `/api/results/:id/guess` | The AI's own lifespan guess (JSON), shown separately from the calculated Lifeline |
 | `GET` | `/api/kundali/transits?from=ISO&to=ISO` | Planet longitudes for the animated wheel |
 | `GET` | `/api/kundali/now` | Current sidereal planet positions |
 | `GET` | `/api/geo/search?q=` | Birth place search |
 | `GET` | `/api/countries` | Countries with life-expectancy baselines |
 | `POST` | `/api/age` | Original age endpoint, kept for compatibility |
-| `GET` | `/api/status` | Database and AI health |
+| `GET` | `/api/status` | Database, AI and per-service health |
 
 ## How the numbers are made
 

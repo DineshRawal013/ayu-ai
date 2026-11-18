@@ -6,16 +6,20 @@
 # gitignored and never copied to Azure, which keeps using the postgres container.
 
 services:
-  backend:
+  gateway:
     environment:
       DATABASE_URL: postgres://${LOCAL_PG_USER:-ayu}@host.docker.internal:${LOCAL_PG_PORT:-5432}/${LOCAL_PG_DB:-ayu}
       PGPASSWORD: ${LOCAL_PG_PASSWORD:?Set LOCAL_PG_PASSWORD in .env}
     extra_hosts:
       - "host.docker.internal:host-gateway"
-    # Drop the dependency on the postgres container.
+    # Drop the dependency on the postgres container; keep the internal services.
     depends_on: !override
-      ollama:
-        condition: service_started
+      health-svc:
+        condition: service_healthy
+      kundali-svc:
+        condition: service_healthy
+      ai-svc:
+        condition: service_healthy
 
   # Not started locally; start it anyway with: docker compose --profile container-db up
   postgres:
