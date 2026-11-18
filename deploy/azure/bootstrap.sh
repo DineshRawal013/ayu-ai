@@ -51,15 +51,35 @@ if [ -z "$CLIENT_ID" ]; then
 fi
 az ad sp show --id "$CLIENT_ID" -o none 2>/dev/null || az ad sp create --id "$CLIENT_ID" -o none
 
-SUBJECT="repo:${REPO}:environment:${GH_ENVIRONMENT}"
-if ! az ad app federated-credential list --id "$CLIENT_ID" --query "[].subject" -o tsv | grep -qx "$SUBJECT"; then
-  az ad app federated-credential create --id "$CLIENT_ID" -o none --parameters "{
-    \"name\": \"github-${GH_ENVIRONMENT}\",
-    \"issuer\": \"https://token.actions.githubusercontent.com\",
-    \"subject\": \"${SUBJECT}\",
-    \"audiences\": [\"api://AzureADTokenExchange\"]
-  }"
+# GitHub presents one of two subject formats, depending on the repository's OIDC settings:
+#   repo:Owner/name:environment:env                       (classic)
+#   repo:Owner@<owner id>/name@<repo id>:environment:env  (with immutable ids; this repo uses it)
+# Register both, so the deploy signs in either way.
+IDS=$( (gh api "repos/${REPO}" --jq '"\(.owner.id) \(.id)"' 2>/dev/null) \
+    || (curl -fsS "https://api.github.com/repos/${REPO}" | python3 -c 'import json,sys; d=json.load(sys.stdin); print(d["owner"]["id"], d["id"])' 2>/dev/null) \
+    || true)
+SUBJECTS="repo:${REPO}:environment:${GH_ENVIRONMENT}"
+if [ -n "$IDS" ]; then
+  set -- $IDS
+  SUBJECTS="$SUBJECTS repo:${REPO%%/*}@$1/${REPO#*/}@$2:environment:${GH_ENVIRONMENT}"
+else
+  echo "    Warning: couldn't look up the GitHub ids of ${REPO}; only the classic subject is registered."
 fi
+EXISTING=$(az ad app federated-credential list --id "$CLIENT_ID" --query "[].subject" -o tsv)
+n=0
+for SUBJECT in $SUBJECTS; do
+  n=$((n + 1))
+  if ! printf '%s\n' "$EXISTING" | grep -qxF "$SUBJECT"; then
+    NAME="github-${GH_ENVIRONMENT}"; [ "$n" -gt 1 ] && NAME="github-${GH_ENVIRONMENT}-ids"
+    az ad app federated-credential create --id "$CLIENT_ID" -o none --parameters "{
+      \"name\": \"${NAME}\",
+      \"issuer\": \"https://token.actions.githubusercontent.com\",
+      \"subject\": \"${SUBJECT}\",
+      \"audiences\": [\"api://AzureADTokenExchange\"]
+    }"
+  fi
+  echo "    federated subject: $SUBJECT"
+done
 
 # Contributor on this resource group only: enough to deploy the Bicep and push to ACR.
 SP_ID=$(az ad sp show --id "$CLIENT_ID" --query id -o tsv)
