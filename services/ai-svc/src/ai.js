@@ -2,7 +2,12 @@
 // The insight only explains numbers the backend already calculated; the
 // lifespan guess is the model's own number, kept separate.
 
-const { PLANET_NAME } = require("./kundali");
+// Planet abbreviations used in kundali-svc results (kept here so ai-svc does
+// not depend on the Swiss Ephemeris native module).
+const PLANET_NAME = {
+  Su: "Sun", Mo: "Moon", Ma: "Mars", Me: "Mercury", Ju: "Jupiter",
+  Ve: "Venus", Sa: "Saturn", Ra: "Rahu", Ke: "Ketu"
+};
 
 const OLLAMA_URL = process.env.OLLAMA_URL || "http://ollama:11434";
 const MODEL = process.env.OLLAMA_MODEL || "qwen2.5:1.5b";

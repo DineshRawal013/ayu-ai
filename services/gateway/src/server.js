@@ -1,10 +1,10 @@
+// gateway: the only service the frontend talks to. It exposes the public
+// /api/* routes, owns the results database, share links, AI caching and the
+// "already generating" locks, and calls health-svc, kundali-svc and ai-svc.
+
 const express = require("express");
-const { calculateAgeDetailed } = require("./age");
-const { calculateHealth, validateHealth } = require("./health");
-const { estimateLifespan, COUNTRIES } = require("./lifespan");
-const { buildKundali, transitSeries, positionsNow } = require("./kundali");
 const { searchPlaces } = require("./geo");
-const ai = require("./ai");
+const svc = require("./services");
 const db = require("./db");
 
 const app = express();
@@ -16,28 +16,48 @@ app.use(express.json({ limit: "50kb" }));
 
 const UUID_RE = /^[0-9a-f-]{36}$/i;
 const wrap = (fn) => (req, res, next) => Promise.resolve(fn(req, res, next)).catch(next);
+const { httpError } = svc;
 
 // ---------- status ----------
 
+async function aiStatus() {
+  try {
+    return await svc.call("ai", "/status", { timeoutMs: 5000 });
+  } catch {
+    return { reachable: false, model: null, modelReady: false };
+  }
+}
+
 app.get("/api/status", wrap(async (req, res) => {
-  res.json({ ok: true, database: await db.ping(), ai: await ai.status() });
+  const [database, ai, health, kundali, aiSvc] = await Promise.all([
+    db.ping(), aiStatus(), svc.healthy("health"), svc.healthy("kundali"), svc.healthy("ai")
+  ]);
+  res.json({ ok: true, database, ai, services: { health, kundali, ai: aiSvc } });
 }));
 
-app.get("/api/countries", (req, res) => {
-  res.json(Object.entries(COUNTRIES).map(([code, c]) => ({ code, name: c.name })));
-});
+// ---------- simple pass-through routes ----------
 
-// ---------- age (original endpoint, kept for compatibility) ----------
+app.get("/api/countries", wrap(async (req, res) => {
+  res.json(await svc.call("health", "/countries"));
+}));
 
-app.post("/api/age", (req, res) => {
-  const { dateOfBirth } = req.body || {};
-  if (!dateOfBirth) return res.status(400).json({ error: "dateOfBirth is required" });
-  try {
-    res.json(calculateAgeDetailed(dateOfBirth));
-  } catch (e) {
-    res.status(400).json({ error: e.message });
-  }
-});
+app.post("/api/age", wrap(async (req, res) => {
+  res.json(await svc.call("health", "/age", { method: "POST", body: req.body || {} }));
+}));
+
+app.get("/api/kundali/transits", wrap(async (req, res) => {
+  const qs = new URLSearchParams();
+  if (req.query.from) qs.set("from", String(req.query.from));
+  if (req.query.to) qs.set("to", String(req.query.to));
+  const r = await svc.request("kundali", `/transits?${qs}`, { timeoutMs: 30000 });
+  const cc = r.headers.get("cache-control");
+  if (cc) res.set("Cache-Control", cc);
+  res.status(r.status).json(await r.json());
+}));
+
+app.get("/api/kundali/now", wrap(async (req, res) => {
+  res.json(await svc.call("kundali", "/now"));
+}));
 
 // ---------- place search ----------
 
@@ -54,47 +74,27 @@ app.get("/api/geo/search", wrap(async (req, res) => {
 
 // ---------- main analysis ----------
 
-function runAnalysis(input) {
+// Combines health-svc (age, health, lifespan) and, when a place is given,
+// kundali-svc (birth chart) into one result.
+async function runAnalysis(input) {
   const { dob, birthTime, place, health } = input;
-  if (!dob || !/^\d{4}-\d{2}-\d{2}$/.test(dob)) throw httpError(400, "Date of birth is required (YYYY-MM-DD).");
-
-  const age = calculateAgeDetailed(dob);
-  if (age.years < 15) throw httpError(400, "Ayu AI's health formulas are for ages 15 and over.");
-  if (age.years > 120) throw httpError(400, "Please check the date of birth.");
-
-  const errors = validateHealth(health || {});
-  if (errors.length) throw httpError(400, errors.join(" "));
-
-  const h = health;
-  const healthResult = calculateHealth(h, age.years);
-  const lifespan = estimateLifespan(h, healthResult.metrics, age.decimalYears, dob);
+  const base = await svc.call("health", "/analyze", { method: "POST", body: { dob, health } });
 
   let kundali = null;
   if (place && place.lat != null && place.lon != null) {
-    if (birthTime && !/^\d{2}:\d{2}$/.test(birthTime)) throw httpError(400, "Birth time must be HH:MM.");
-    kundali = buildKundali({ date: dob, time: birthTime || "12:00", lat: place.lat, lon: place.lon, placeName: place.name });
-    kundali.timeUnknown = !birthTime;
+    kundali = await svc.call("kundali", "/chart", {
+      method: "POST",
+      body: { date: dob, time: birthTime || null, lat: place.lat, lon: place.lon, placeName: place.name }
+    });
   }
 
-  return {
-    age,
-    health: healthResult,
-    lifespan,
-    kundali,
-    inputSex: h.sex,
-    inputHabits: { sleep: Number(h.sleep), smoking: h.smoking, alcohol: Number(h.alcohol) }
-  };
-}
-
-function httpError(status, message) {
-  const e = new Error(message);
-  e.status = status;
-  return e;
+  const { age, health: healthResult, lifespan, inputSex, inputHabits } = base;
+  return { age, health: healthResult, lifespan, kundali, inputSex, inputHabits };
 }
 
 app.post("/api/analyze", wrap(async (req, res) => {
   const input = req.body || {};
-  const result = runAnalysis(input);
+  const result = await runAnalysis(input);
   let id = null;
   try {
     id = await db.saveResult(
@@ -114,7 +114,7 @@ app.get("/api/results/:id", wrap(async (req, res) => {
   res.json({ id: row.id, createdAt: row.created_at, input: row.input, insight: row.insight, aiGuess: row.ai_guess, ...row.result });
 }));
 
-// ---------- AI insight (streamed plain text) ----------
+// ---------- AI insight (streamed plain text, via ai-svc) ----------
 
 const generating = new Map(); // id -> true while a generation is running
 
@@ -131,7 +131,7 @@ app.post("/api/results/:id/insight", wrap(async (req, res) => {
   if (row.insight) return res.end(row.insight);
   if (generating.get(id)) return res.status(409).end("Insight is already being generated. Refresh in a few seconds.");
 
-  const st = await ai.status();
+  const st = await aiStatus();
   if (!st.reachable) return res.status(503).end("The AI service is offline right now. Your results are still saved.");
   if (!st.modelReady) return res.status(503).end("The AI model is still downloading. Please try again in a few minutes.");
 
@@ -139,7 +139,17 @@ app.post("/api/results/:id/insight", wrap(async (req, res) => {
   const controller = new AbortController();
   res.on("close", () => { if (!res.writableEnded) controller.abort(); });
   try {
-    const text = await ai.streamInsight(ai.buildPrompt(row.result), (chunk) => res.write(chunk), controller.signal);
+    const upstream = await svc.request("ai", "/insight", {
+      method: "POST", body: { result: row.result }, signal: controller.signal, timeoutMs: 300000
+    });
+    if (!upstream.ok) throw new Error(`ai-svc returned ${upstream.status}`);
+    const decoder = new TextDecoder();
+    let text = "";
+    for await (const chunk of upstream.body) {
+      const s = decoder.decode(chunk, { stream: true });
+      text += s;
+      res.write(s);
+    }
     await db.saveInsight(id, text.trim());
     res.end();
   } catch (e) {
@@ -164,7 +174,7 @@ app.post("/api/results/:id/guess", wrap(async (req, res) => {
   if (row.ai_guess) return res.json(row.ai_guess);
   if (guessing.has(id)) return res.status(409).json({ error: "The AI is already guessing. Refresh in a few seconds." });
 
-  const st = await ai.status();
+  const st = await aiStatus();
   if (!st.reachable) return res.status(503).json({ error: "The AI service is offline right now." });
   if (!st.modelReady) return res.status(503).json({ error: "The AI model is still downloading. Please try again in a few minutes." });
 
@@ -172,9 +182,9 @@ app.post("/api/results/:id/guess", wrap(async (req, res) => {
   const controller = new AbortController();
   res.on("close", () => { if (!res.writableEnded) controller.abort(); });
   try {
-    const ageYears = row.result.age.decimalYears;
-    const guess = await ai.guessLifespan(ai.buildGuessPrompt(row.input, row.result), ageYears, controller.signal);
-    if (!guess) return res.status(502).json({ error: "The AI couldn't make a sensible guess this time." });
+    const guess = await svc.call("ai", "/guess", {
+      method: "POST", body: { input: row.input, result: row.result }, signal: controller.signal, timeoutMs: 300000
+    });
     await db.saveGuess(id, guess);
     res.json(guess);
   } finally {
@@ -182,40 +192,20 @@ app.post("/api/results/:id/guess", wrap(async (req, res) => {
   }
 }));
 
-// ---------- planet timeline ----------
-
-app.get("/api/kundali/transits", wrap(async (req, res) => {
-  const from = String(req.query.from || "");
-  const to = req.query.to ? String(req.query.to) : undefined;
-  if (!from) return res.status(400).json({ error: "from is required" });
-  if ((new Date(to || Date.now()) - new Date(from)) / (365.25 * 86400000) > 125) {
-    return res.status(400).json({ error: "Range too long" });
-  }
-  try {
-    res.set("Cache-Control", "public, max-age=3600");
-    res.json(transitSeries(from, to));
-  } catch (e) {
-    res.status(400).json({ error: e.message });
-  }
-}));
-
-app.get("/api/kundali/now", (req, res) => {
-  res.json(positionsNow());
-});
-
 // ---------- errors ----------
 
 app.use("/api", (req, res) => res.status(404).json({ error: "Not found" }));
 
 app.use((err, req, res, next) => {
   const status = err.status || 500;
-  if (status >= 500) console.error(err);
-  res.status(status).json({ error: status >= 500 ? "Something went wrong." : err.message });
+  if (status >= 500 && status !== 502 && status !== 503) console.error(err);
+  const passOn = status < 500 || status === 502 || status === 503;
+  res.status(status).json({ error: passOn ? err.message : "Something went wrong." });
 });
 
 if (require.main === module) {
   db.init();
-  app.listen(port, () => console.log(`Ayu AI backend running on port ${port}`));
+  app.listen(port, () => console.log(`Ayu AI gateway running on port ${port}`));
 }
 
 module.exports = { app, runAnalysis };

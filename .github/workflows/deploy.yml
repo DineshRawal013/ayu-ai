@@ -17,16 +17,19 @@ env:
 jobs:
   test:
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        service: [gateway, health-svc, kundali-svc, ai-svc]
     defaults:
       run:
-        working-directory: backend
+        working-directory: services/${{ matrix.service }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
           node-version: 20
           cache: npm
-          cache-dependency-path: backend/package-lock.json
+          cache-dependency-path: services/${{ matrix.service }}/package-lock.json
       - run: npm ci
       - run: npm test
 
@@ -36,7 +39,12 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        service: [backend, frontend]
+        include:
+          - { service: frontend, context: ./frontend }
+          - { service: gateway, context: ./services/gateway }
+          - { service: health-svc, context: ./services/health-svc }
+          - { service: kundali-svc, context: ./services/kundali-svc }
+          - { service: ai-svc, context: ./services/ai-svc }
     steps:
       - uses: actions/checkout@v4
       - name: Lowercase owner for GHCR
@@ -49,7 +57,7 @@ jobs:
           password: ${{ secrets.GITHUB_TOKEN }}
       - uses: docker/build-push-action@v6
         with:
-          context: ./${{ matrix.service }}
+          context: ${{ matrix.context }}
           push: true
           tags: |
             ${{ env.REGISTRY }}/${{ env.OWNER_LC }}/ayu-ai-${{ matrix.service }}:latest
@@ -91,7 +99,7 @@ jobs:
             test -f .env || { echo "Missing ~/ayu-ai/.env on the VM. Run deploy/setup-vm.sh first."; exit 1; }
             echo "$GHCR_TOKEN" | docker login ghcr.io -u "$GHCR_USER" --password-stdin
             export TAG="$SHA"
-            docker compose pull frontend backend
+            docker compose pull frontend gateway health-svc kundali-svc ai-svc
             docker compose up -d --no-build --remove-orphans
             # Pick up a changed Caddyfile (up -d doesn't restart Caddy for that).
             if docker compose ps --status running --services | grep -qx caddy; then
@@ -118,5 +126,5 @@ jobs:
             done
             echo "App not reachable on port $PORT after 2 minutes"
             docker compose ps
-            docker compose logs --tail 50 frontend backend
+            docker compose logs --tail 50 frontend gateway health-svc kundali-svc ai-svc
             exit 1
