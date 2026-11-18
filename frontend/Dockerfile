@@ -1,7 +1,11 @@
 FROM nginx:1.27-alpine
 
 RUN rm -rf /usr/share/nginx/html/* /etc/nginx/conf.d/default.conf
-COPY nginx.conf /etc/nginx/conf.d/ayu.conf
+# nginx.conf is a template: the image's entrypoint writes it to conf.d with GATEWAY_URL filled in.
+# The filter keeps nginx's own $variables untouched.
+COPY nginx.conf /etc/nginx/templates/ayu.conf.template
+ENV GATEWAY_URL=http://gateway:3000 \
+    NGINX_ENVSUBST_FILTER=GATEWAY_URL
 COPY index.html style.css app.js kundali.js /usr/share/nginx/html/
 
 EXPOSE 80

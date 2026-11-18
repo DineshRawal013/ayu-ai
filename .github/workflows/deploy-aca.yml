@@ -1,0 +1,173 @@
+name: Deploy to Azure Container Apps
+
+# Not the production path yet: the VM deploy in deploy.yml still runs on every push to main.
+# This workflow deploys only when you run it by hand (Actions > this workflow > Run workflow).
+# To switch production to Container Apps: add "push: branches: [main]" under "on:" here,
+# and remove the "deploy" job from deploy.yml. One-time setup: deploy/azure/README.md.
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - infra/**
+      - ollama/**
+      - frontend/Dockerfile
+      - frontend/nginx.conf
+      - .github/workflows/deploy-aca.yml
+
+permissions:
+  contents: read
+  id-token: write   # OIDC sign-in to Azure, no stored password
+
+env:
+  RESOURCE_GROUP: ${{ vars.AZURE_RESOURCE_GROUP || 'ayu-aca-rg' }}
+
+concurrency:
+  group: azure-aca-${{ github.event_name }}
+  cancel-in-progress: false
+
+jobs:
+  # PRs: check the Bicep compiles and the frontend template renders. No Azure sign-in.
+  validate:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build Bicep
+        run: |
+          az bicep install
+          az bicep build --file infra/main.bicep --stdout > /dev/null
+      - name: Frontend renders GATEWAY_URL for Compose and for Container Apps
+        run: |
+          docker build -t ayu-frontend-check ./frontend
+          for url in http://gateway:3000 http://gateway; do
+            docker run --rm --add-host gateway:127.0.0.1 -e GATEWAY_URL="$url" ayu-frontend-check \
+              sh -c '/docker-entrypoint.sh nginx -t && grep -n "proxy_pass\|proxy_set_header Host" /etc/nginx/conf.d/ayu.conf'
+          done
+
+  test:
+    if: github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        service: [gateway, health-svc, kundali-svc, ai-svc]
+    defaults:
+      run:
+        working-directory: services/${{ matrix.service }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: services/${{ matrix.service }}/package-lock.json
+      - run: npm ci
+      - run: npm test
+
+  images:
+    needs: test
+    runs-on: ubuntu-latest
+    environment: azure-aca
+    strategy:
+      matrix:
+        include:
+          - { service: frontend, context: ./frontend }
+          - { service: gateway, context: ./services/gateway }
+          - { service: health-svc, context: ./services/health-svc }
+          - { service: kundali-svc, context: ./services/kundali-svc }
+          - { service: ai-svc, context: ./services/ai-svc }
+    steps:
+      - uses: actions/checkout@v4
+      - uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+      - name: Sign in to the registry
+        run: |
+          ACR=$(az acr list -g "$RESOURCE_GROUP" --query "[0].name" -o tsv)
+          test -n "$ACR" || { echo "No registry in $RESOURCE_GROUP. Run deploy/azure/bootstrap.sh first."; exit 1; }
+          az acr login -n "$ACR"
+          echo "REGISTRY=$(az acr show -n "$ACR" --query loginServer -o tsv)" >> "$GITHUB_ENV"
+      - uses: docker/setup-buildx-action@v3
+      - uses: docker/build-push-action@v6
+        with:
+          context: ${{ matrix.context }}
+          push: true
+          tags: ${{ env.REGISTRY }}/ayu-ai-${{ matrix.service }}:${{ github.sha }}
+          cache-from: type=gha,scope=aca-${{ matrix.service }}
+          cache-to: type=gha,mode=max,scope=aca-${{ matrix.service }}
+
+  # Ollama with the model baked in (~1 GB model on top of the base image). Rebuilt only when
+  # ollama/ changes, so a normal deploy doesn't push gigabytes to the registry.
+  ollama-image:
+    if: github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    environment: azure-aca
+    outputs:
+      tag: ${{ steps.tag.outputs.tag }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+      - id: tag
+        name: Tag from the contents of ollama/
+        run: |
+          HASH='${{ hashFiles('ollama/Dockerfile', 'ollama/entrypoint.sh') }}'
+          echo "tag=${HASH:0:12}" >> "$GITHUB_OUTPUT"
+      - name: Build and push unless the registry has it
+        env:
+          TAG: ${{ steps.tag.outputs.tag }}
+        run: |
+          ACR=$(az acr list -g "$RESOURCE_GROUP" --query "[0].name" -o tsv)
+          test -n "$ACR" || { echo "No registry in $RESOURCE_GROUP. Run deploy/azure/bootstrap.sh first."; exit 1; }
+          if az acr repository show-tags -n "$ACR" --repository ayu-ai-ollama -o tsv 2>/dev/null | grep -qx "$TAG"; then
+            echo "ayu-ai-ollama:$TAG already in $ACR"
+            exit 0
+          fi
+          az acr login -n "$ACR"
+          IMAGE="$(az acr show -n "$ACR" --query loginServer -o tsv)/ayu-ai-ollama:$TAG"
+          docker build -t "$IMAGE" ./ollama
+          docker push "$IMAGE"
+
+  deploy:
+    needs: [images, ollama-image]
+    runs-on: ubuntu-latest
+    environment: azure-aca
+    steps:
+      - uses: actions/checkout@v4
+      - uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+      - name: Deploy infra/main.bicep
+        env:
+          PG_PASSWORD: ${{ secrets.AZURE_POSTGRES_PASSWORD }}
+          SHA: ${{ github.sha }}
+          OLLAMA_TAG: ${{ needs.ollama-image.outputs.tag }}
+          # Repository variables; 1 keeps the apps running, 0 (default) scales them to zero when idle.
+          OLLAMA_MIN: ${{ vars.AZURE_OLLAMA_MIN_REPLICAS || '0' }}
+          APP_MIN: ${{ vars.AZURE_APP_MIN_REPLICAS || '0' }}
+        run: |
+          test -n "$PG_PASSWORD" || { echo "Add the AZURE_POSTGRES_PASSWORD secret first."; exit 1; }
+          ACR=$(az acr list -g "$RESOURCE_GROUP" --query "[0].name" -o tsv)
+          # The first run creates Postgres and the environment and takes 10 to 15 minutes.
+          URL=$(az deployment group create -g "$RESOURCE_GROUP" -n "ayu-${SHA:0:12}" \
+            -f infra/main.bicep \
+            -p acrName="$ACR" imageTag="$SHA" ollamaImageTag="$OLLAMA_TAG" postgresPassword="$PG_PASSWORD" \
+               ollamaMinReplicas="$OLLAMA_MIN" appMinReplicas="$APP_MIN" \
+            --query properties.outputs.url.value -o tsv)
+          echo "URL=$URL" >> "$GITHUB_ENV"
+          echo "Site: $URL" >> "$GITHUB_STEP_SUMMARY"
+      - name: Check the site answers
+        run: |
+          for i in $(seq 1 30); do
+            if curl -fsS "$URL/api/status"; then echo; echo "Deployed ${{ github.sha }} at $URL"; exit 0; fi
+            sleep 10
+          done
+          echo "No answer from $URL/api/status after 5 minutes"
+          az containerapp logs show -g "$RESOURCE_GROUP" -n gateway --tail 50 || true
+          exit 1

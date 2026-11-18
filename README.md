@@ -128,6 +128,8 @@ cd services/gateway && npm ci && npm test       # likewise for health-svc, kunda
 
 ## Deploy to Azure (VM + GitHub Actions)
 
+> Moving to Azure Container Apps instead of a VM? See [deploy/azure/README.md](deploy/azure/README.md). Until you switch, the VM below stays the production deploy.
+
 On every push to `main`, GitHub Actions runs the tests, builds the `frontend`, `gateway`, `health-svc`, `kundali-svc` and `ai-svc` images, pushes them to GitHub Container Registry, then SSHes into the VM and restarts the containers.
 
 ### 1. Create the VM
