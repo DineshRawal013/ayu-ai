@@ -71,8 +71,10 @@ services:
         condition: service_healthy
       kundali-svc:
         condition: service_healthy
+      # Only started, not healthy: the site works without the AI (the insight returns 503),
+      # so a slow or broken ai-svc must not keep the gateway and frontend down.
       ai-svc:
-        condition: service_healthy
+        condition: service_started
     networks:
       - frontend-net
       - services-net
