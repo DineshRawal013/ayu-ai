@@ -15,25 +15,19 @@ Files: `infra/main.bicep` (everything), `infra/modules/app.bicep` (one container
 
 ## One-time setup
 
+GitHub only lets you start a manual workflow once it is on `main`, so merge this first. Merging doesn't deploy anything to Azure, and the VM deploy carries on as before.
+
 1. Open [Azure Cloud Shell](https://shell.azure.com) in Bash, then run:
 
    ```bash
+   gh auth login        # once: lets the script add the GitHub secrets for you
    git clone https://github.com/DineshRawal013/ayu-ai.git && cd ayu-ai
    bash deploy/azure/bootstrap.sh
    ```
 
-   It creates the resource group `ayu-aca-rg` (Korea Central), the registry, a pull identity, and an Entra app that GitHub Actions signs in as with OIDC (no password is stored anywhere). It prints the values for step 2.
+   It creates the resource group `ayu-aca-rg` (Korea Central), the registry, a pull identity, and an Entra app that GitHub Actions signs in as with OIDC (no password is stored anywhere). Then it creates the GitHub environment `azure-aca` with these secrets: `AZURE_CLIENT_ID`, `AZURE_TENANT_ID`, `AZURE_SUBSCRIPTION_ID`, and `AZURE_POSTGRES_PASSWORD`, which it generates without showing it. If you skip `gh auth login`, it prints the values for you to add under **Settings > Environments** instead.
 
-2. In GitHub, go to **Settings > Environments > New environment**, name it `azure-aca`, and add these secrets:
-
-   | Secret | Value |
-   |---|---|
-   | `AZURE_CLIENT_ID` | printed by the script |
-   | `AZURE_TENANT_ID` | printed by the script |
-   | `AZURE_SUBSCRIPTION_ID` | printed by the script |
-   | `AZURE_POSTGRES_PASSWORD` | a long random password (the script prints one you can use) |
-
-3. Go to **Actions > Deploy to Azure Container Apps > Run workflow**. The first run takes about 20 minutes: Postgres and the environment take 10 to 15, and the Ollama image (about 4 GB) is built once. The run summary shows the site's URL.
+2. Start the first deploy: `gh workflow run deploy-aca.yml --repo DineshRawal013/ayu-ai`, or **Actions > Deploy to Azure Container Apps > Run workflow**. The first run takes about 20 minutes: Postgres and the environment take 10 to 15, and the Ollama image (about 4 GB) is built once. The run summary shows the site's URL.
 
 ## Cost and speed
 

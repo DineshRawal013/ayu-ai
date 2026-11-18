@@ -5,7 +5,7 @@
 # It creates only what the GitHub workflow can't make for itself:
 #   - resource group, container registry (ACR, Basic) and a pull identity with AcrPull
 #   - an Entra app that GitHub Actions signs in as (OIDC, no password), Contributor on the group
-# Then it prints the GitHub secrets to add. Safe to run again: it reuses what already exists.
+# Then it sets up the GitHub environment and secrets with gh, or prints them to add by hand. Safe to run again: it reuses what already exists.
 # The apps, Postgres and network come later, from infra/main.bicep, when the workflow runs.
 set -euo pipefail
 
@@ -66,9 +66,33 @@ SP_ID=$(az ad sp show --id "$CLIENT_ID" --query id -o tsv)
 az role assignment create --assignee-object-id "$SP_ID" --assignee-principal-type ServicePrincipal \
   --role Contributor --scope "$RG_ID" -o none 2>/dev/null || echo "    (Contributor already assigned)"
 
+# GitHub side: if the GitHub CLI is signed in (Cloud Shell has gh; run "gh auth login" once),
+# create the environment and its secrets here, so nothing has to be copied by hand.
+# The Postgres password is generated here and goes straight into the secret; it is never printed.
+if command -v gh >/dev/null && gh auth status >/dev/null 2>&1; then
+  echo "==> GitHub environment ${GH_ENVIRONMENT} and secrets on ${REPO}"
+  gh api -X PUT "repos/${REPO}/environments/${GH_ENVIRONMENT}" >/dev/null
+  gh secret set AZURE_CLIENT_ID       --repo "$REPO" --env "$GH_ENVIRONMENT" --body "$CLIENT_ID"
+  gh secret set AZURE_TENANT_ID       --repo "$REPO" --env "$GH_ENVIRONMENT" --body "$TENANT"
+  gh secret set AZURE_SUBSCRIPTION_ID --repo "$REPO" --env "$GH_ENVIRONMENT" --body "$SUB"
+  if [ "${RESET_PG_PASSWORD:-}" = 1 ] || ! gh secret list --repo "$REPO" --env "$GH_ENVIRONMENT" | grep -q '^AZURE_POSTGRES_PASSWORD'; then
+    openssl rand -hex 24 | gh secret set AZURE_POSTGRES_PASSWORD --repo "$REPO" --env "$GH_ENVIRONMENT"
+  fi
+  if [ "$RG" != "ayu-aca-rg" ]; then
+    gh variable set AZURE_RESOURCE_GROUP --repo "$REPO" --body "$RG"
+  fi
+  cat <<EOF
+
+Done. Azure and GitHub are set up. Start the first deploy with:
+  gh workflow run deploy-aca.yml --repo ${REPO}
+and follow it under Actions in GitHub (about 20 minutes the first time).
+EOF
+  exit 0
+fi
+
 cat <<EOF
 
-Done. In GitHub: Settings > Environments > New environment "${GH_ENVIRONMENT}", then add these
+Done with Azure. The GitHub CLI isn't signed in, so add these by hand. In GitHub: Settings > Environments > New environment "${GH_ENVIRONMENT}", then add these
 environment secrets (or repository secrets):
 
   AZURE_CLIENT_ID          ${CLIENT_ID}
