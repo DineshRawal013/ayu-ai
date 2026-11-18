@@ -100,7 +100,12 @@ jobs:
             echo "$GHCR_TOKEN" | docker login ghcr.io -u "$GHCR_USER" --password-stdin
             export TAG="$SHA"
             docker compose pull frontend gateway health-svc kundali-svc ai-svc
-            docker compose up -d --no-build --remove-orphans
+            if ! docker compose up -d --no-build --remove-orphans; then
+              echo "docker compose up failed. Status and logs:"
+              docker compose ps -a
+              docker compose logs --tail 80 gateway health-svc kundali-svc ai-svc ollama postgres
+              exit 1
+            fi
             # Pick up a changed Caddyfile (up -d doesn't restart Caddy for that).
             if docker compose ps --status running --services | grep -qx caddy; then
               docker compose exec -T caddy caddy reload --config /etc/caddy/Caddyfile
