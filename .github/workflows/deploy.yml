@@ -1,4 +1,6 @@
-name: Test, build and deploy
+# Tests for every PR and push. Production deploys from deploy-aca.yml (Azure Container Apps);
+# the old VM deploy (GHCR images + SSH to the VM) was removed when production moved there.
+name: Test
 
 on:
   push:
@@ -8,11 +10,6 @@ on:
 
 permissions:
   contents: read
-  packages: write
-
-env:
-  REGISTRY: ghcr.io
-  OWNER: ${{ github.repository_owner }}
 
 jobs:
   test:
@@ -32,104 +29,3 @@ jobs:
           cache-dependency-path: services/${{ matrix.service }}/package-lock.json
       - run: npm ci
       - run: npm test
-
-  build:
-    needs: test
-    if: github.event_name != 'pull_request'
-    runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        include:
-          - { service: frontend, context: ./frontend }
-          - { service: gateway, context: ./services/gateway }
-          - { service: health-svc, context: ./services/health-svc }
-          - { service: kundali-svc, context: ./services/kundali-svc }
-          - { service: ai-svc, context: ./services/ai-svc }
-    steps:
-      - uses: actions/checkout@v4
-      - name: Lowercase owner for GHCR
-        run: echo "OWNER_LC=${OWNER,,}" >> "$GITHUB_ENV"
-      - uses: docker/setup-buildx-action@v3
-      - uses: docker/login-action@v3
-        with:
-          registry: ${{ env.REGISTRY }}
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-      - uses: docker/build-push-action@v6
-        with:
-          context: ${{ matrix.context }}
-          push: true
-          tags: |
-            ${{ env.REGISTRY }}/${{ env.OWNER_LC }}/ayu-ai-${{ matrix.service }}:latest
-            ${{ env.REGISTRY }}/${{ env.OWNER_LC }}/ayu-ai-${{ matrix.service }}:${{ github.sha }}
-          cache-from: type=gha,scope=${{ matrix.service }}
-          cache-to: type=gha,mode=max,scope=${{ matrix.service }}
-
-  deploy:
-    needs: build
-    if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
-    runs-on: ubuntu-latest
-    environment: production
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Copy compose files to the VM
-        uses: appleboy/scp-action@v0.1.7
-        with:
-          host: ${{ secrets.VM_HOST }}
-          username: ${{ secrets.VM_USER }}
-          key: ${{ secrets.VM_SSH_KEY }}
-          source: "docker-compose.yml,ollama/entrypoint.sh,caddy/Caddyfile"
-          target: "~/ayu-ai"
-
-      - name: Pull new images and restart
-        uses: appleboy/ssh-action@v1.2.0
-        env:
-          GHCR_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          GHCR_USER: ${{ github.actor }}
-          SHA: ${{ github.sha }}
-        with:
-          host: ${{ secrets.VM_HOST }}
-          username: ${{ secrets.VM_USER }}
-          key: ${{ secrets.VM_SSH_KEY }}
-          envs: GHCR_TOKEN,GHCR_USER,SHA
-          script: |
-            set -e
-            cd ~/ayu-ai
-            test -f .env || { echo "Missing ~/ayu-ai/.env on the VM. Run deploy/setup-vm.sh first."; exit 1; }
-            echo "$GHCR_TOKEN" | docker login ghcr.io -u "$GHCR_USER" --password-stdin
-            export TAG="$SHA"
-            docker compose pull frontend gateway health-svc kundali-svc ai-svc
-            if ! docker compose up -d --no-build --remove-orphans; then
-              echo "docker compose up failed. Status and logs:"
-              docker compose ps -a
-              docker compose logs --tail 80 gateway health-svc kundali-svc ai-svc ollama postgres
-              exit 1
-            fi
-            # Pick up a changed Caddyfile (up -d doesn't restart Caddy for that).
-            if docker compose ps --status running --services | grep -qx caddy; then
-              docker compose exec -T caddy caddy reload --config /etc/caddy/Caddyfile
-            fi
-            docker image prune -f
-            docker logout ghcr.io
-            # Check on the port the VM's .env publishes, and give a cold start up to 2 minutes.
-            # HTTP_PORT may be "127.0.0.1:8080" when Caddy serves HTTPS, so keep only the port.
-            PORT=$(grep -E '^HTTP_PORT=' .env | cut -d= -f2 | tr -d '\r')
-            PORT=${PORT:-80}
-            PORT=${PORT##*:}
-            DOMAIN=$(grep -E '^DOMAIN=' .env | cut -d= -f2 | tr -d '\r')
-            for i in $(seq 1 24); do
-              if curl -fsS "http://localhost:$PORT/api/status"; then
-                echo " deployed $SHA on port $PORT"
-                if [ -n "$DOMAIN" ]; then
-                  curl -fsS -o /dev/null "https://$DOMAIN/api/status" && echo "HTTPS ok: https://$DOMAIN" \
-                    || { echo "Warning: https://$DOMAIN not reachable yet"; docker compose logs --tail 30 caddy; }
-                fi
-                exit 0
-              fi
-              sleep 5
-            done
-            echo "App not reachable on port $PORT after 2 minutes"
-            docker compose ps
-            docker compose logs --tail 50 frontend gateway health-svc kundali-svc ai-svc
-            exit 1
