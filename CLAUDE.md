@@ -34,10 +34,9 @@ Every service has `GET /healthz` and a Docker `HEALTHCHECK`. Errors a service re
 - Any such output must be labelled as traditional belief for learning, with no scientific or predictive validity. Keep it separate from the health-based lifespan estimate.
 - Current state: the code and copy say the opposite. See the header comment in `kundali.js`, the "Never predict death, illness or a lifespan from astrology" line in `ai.js`, the fineprint in `index.html` and the README disclaimer. If you add this feature, update those places together. Don't change them unprompted.
 
-### 3. `docker-compose.yml` is the production file
-- GitHub Actions (`.github/workflows/deploy.yml`) copies `docker-compose.yml`, `ollama/entrypoint.sh` and `caddy/Caddyfile` to the Azure VM on every push to `main` and runs `docker compose pull frontend gateway health-svc kundali-svc ai-svc && docker compose up -d --no-build --remove-orphans`.
-- **Local-only changes must go in separate files**, e.g. `docker-compose.override.yml`, `docker-compose.local.yml` or a local `.env`. Never put dev-only ports, mounts, build tweaks or debug settings in `docker-compose.yml` or `ollama/entrypoint.sh`.
-- Any change to those files reaches production on the next push to `main`.
+### 3. Production is Azure Container Apps; `docker-compose.yml` is for local runs
+- Every push to `main` runs `.github/workflows/deploy-aca.yml`: tests, builds the images into ACR and deploys `infra/main.bicep`. Changes to `infra/`, the Dockerfiles, `frontend/nginx.conf` or `ollama/` reach production on the next push to `main`.
+- `docker-compose.yml` is no longer deployed anywhere. Still keep local-only tweaks in separate files (`docker-compose.override.yml`, a local `.env`) so the shared file stays clean.
 
 ## Commands
 
@@ -53,11 +52,13 @@ cd services/kundali-svc && npm ci && npm test
 cd services/ai-svc && npm ci && npm test   # uses a fake Ollama, no model needed
 ```
 
-## Deployment (Azure)
+## Deployment (Azure Container Apps)
 
-Push to `main` → test (matrix over the 4 services) → build 5 images (`frontend`, `gateway`, `health-svc`, `kundali-svc`, `ai-svc`) → push to GHCR (`ghcr.io/<owner>/ayu-ai-<service>:latest` and `:<sha>`) → SCP compose files → SSH, pull and restart → `curl /api/status`. PRs run tests only. The VM is prepared once with `deploy/setup-vm.sh`, which creates `~/ayu-ai/.env`. The `VM_HOST`, `VM_USER` and `VM_SSH_KEY` secrets are required.
+Production runs on Azure Container Apps in **Japan East** (repo variable `AZURE_LOCATION=japaneast`; Postgres B1ms is refused in Korea Central on this student subscription). The resource group `ayu-aca-rg` and the ACR are in Korea Central.
 
-**Azure Container Apps (prepared, not live yet):** `infra/main.bicep` + `.github/workflows/deploy-aca.yml` (manual `workflow_dispatch` only, GitHub environment `azure-aca`, OIDC secrets). One container app per service, internal apps reached as `http://<name>` on port 80, managed Postgres in a private VNet, images in ACR, Ollama image with the model baked in (`ollama/Dockerfile`, not used by Compose). `frontend/nginx.conf` is an nginx template: `GATEWAY_URL` defaults to `http://gateway:3000` for Compose. One-time setup in `deploy/azure/README.md`. Until the user switches, the VM deploy stays production.
+Push to `main` → `deploy-aca.yml`: test (matrix over the 4 services) → build 5 images into ACR (+ the Ollama image with the model baked in, rebuilt only when `ollama/` changes) → `az deployment group create` with `infra/main.bicep` → the run summary shows the URL. PRs run `deploy.yml` (tests only) and a Bicep/template check. GitHub environment `azure-aca` holds the OIDC secrets (`AZURE_CLIENT_ID`, `AZURE_TENANT_ID`, `AZURE_SUBSCRIPTION_ID`) and `AZURE_POSTGRES_PASSWORD`. One container app per service, internal apps reached as `http://<name>` on port 80, managed Postgres in a private VNet. `frontend/nginx.conf` is an nginx template: `GATEWAY_URL` defaults to `http://gateway:3000` for Compose. One-time setup in `deploy/azure/README.md`.
+
+The old VM deploy (GHCR images, SSH to the VM, `deploy/setup-vm.sh`, `caddy/`) is no longer run by CI.
 
 ## Gotchas
 

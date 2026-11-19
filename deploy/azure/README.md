@@ -1,6 +1,6 @@
 # Deploy to Azure Container Apps
 
-This runs the same services as `docker-compose.yml`, but as Azure Container Apps instead of containers on one VM. Until you switch, the VM deploy (`.github/workflows/deploy.yml`) stays the production path and this one runs only when you start it by hand.
+This runs the same services as `docker-compose.yml`, but as Azure Container Apps instead of containers on one VM. It is the production deploy: every push to `main` runs `.github/workflows/deploy-aca.yml`.
 
 | Compose (VM) | Azure |
 |---|---|
@@ -15,7 +15,7 @@ Files: `infra/main.bicep` (everything), `infra/modules/app.bicep` (one container
 
 ## One-time setup
 
-GitHub only lets you start a manual workflow once it is on `main`, so merge this first. Merging doesn't deploy anything to Azure, and the VM deploy carries on as before.
+Do this once, before the first push to `main` deploys.
 
 1. Open [Azure Cloud Shell](https://shell.azure.com) in Bash, then run:
 
@@ -50,9 +50,9 @@ Rough monthly cost at list prices (check the [pricing calculator](https://azure.
 
 Ollama is the big item because it needs 4 GiB of memory. 4 GiB with 2 vCPU is the most that fits comfortably on the Consumption plan for this model.
 
-## Switch production from the VM
+## Switching from the VM (done)
 
-When the Container Apps site works:
+Production was switched from the VM to Container Apps. For reference, the steps were:
 
 1. Optional: copy the saved results (share links) from the VM. Dump them with the command below. Postgres on Azure is private, so the restore (`psql < ayu.sql`) has to run from inside the VNet, for example from a short-lived container app job.
 

@@ -99,7 +99,8 @@ ayu-ai/
 ├── ollama/entrypoint.sh
 ├── caddy/Caddyfile
 ├── deploy/setup-vm.sh
-├── .github/workflows/deploy.yml
+├── infra/              main.bicep (Azure Container Apps)
+├── .github/workflows/  deploy-aca.yml (deploy), deploy.yml (tests)
 └── docker-compose.yml
 ```
 
@@ -126,63 +127,11 @@ Tests (each service has its own suite; ai-svc uses a fake Ollama):
 cd services/gateway && npm ci && npm test       # likewise for health-svc, kundali-svc, ai-svc
 ```
 
-## Deploy to Azure (VM + GitHub Actions)
+## Deploy to Azure (Container Apps)
 
-> Moving to Azure Container Apps instead of a VM? See [deploy/azure/README.md](deploy/azure/README.md). Until you switch, the VM below stays the production deploy.
+Production runs on Azure Container Apps. Every push to `main` runs the tests, builds the images into Azure Container Registry and deploys `infra/main.bicep` (`.github/workflows/deploy-aca.yml`). The run summary shows the site's URL. One-time setup, cost and options: [deploy/azure/README.md](deploy/azure/README.md).
 
-On every push to `main`, GitHub Actions runs the tests, builds the `frontend`, `gateway`, `health-svc`, `kundali-svc` and `ai-svc` images, pushes them to GitHub Container Registry, then SSHes into the VM and restarts the containers.
-
-### 1. Create the VM
-
-In the Azure portal (or with the Azure CLI below):
-
-- Image: **Ubuntu Server 24.04 LTS**
-- Size: **Standard_B2ms** (2 vCPU, 8 GB RAM). The AI model runs on CPU.
-- Authentication: **SSH public key**
-- Inbound ports: **22** and **80** (and **443** for HTTPS, see step 5)
-
-```bash
-az group create -n ayu-rg -l koreacentral
-az vm create -g ayu-rg -n ayu-vm --image Ubuntu2404 --size Standard_B2ms \
-  --admin-username azureuser --generate-ssh-keys --public-ip-sku Standard
-az vm open-port -g ayu-rg -n ayu-vm --port 80
-```
-
-### 2. Prepare the VM (one time)
-
-```bash
-scp deploy/setup-vm.sh azureuser@<VM_IP>:~
-ssh azureuser@<VM_IP> 'bash setup-vm.sh'
-```
-
-This installs Docker, adds swap and creates `~/ayu-ai/.env` with a random database password.
-
-### 3. Add GitHub secrets
-
-Repo → **Settings → Secrets and variables → Actions → New repository secret**:
-
-| Secret | Value |
-|---|---|
-| `VM_HOST` | VM public IP |
-| `VM_USER` | `azureuser` |
-| `VM_SSH_KEY` | Contents of your **private** key (e.g. `~/.ssh/id_rsa`) |
-
-### 4. Deploy
-
-Push to `main` (or run the workflow from the **Actions** tab). The site appears at `http://<VM_IP>`. The first deploy takes a few extra minutes while the VM downloads the model.
-
-### 5. HTTPS (optional)
-
-1. Give the VM's public IP a **DNS name label** (Public IP → Configuration), set it to **Static**, and open inbound port **443**.
-2. Add to `~/ayu-ai/.env` on the VM (use your own DNS name):
-   ```
-   DOMAIN=ayu-ai.koreacentral.cloudapp.azure.com
-   COMPOSE_PROFILES=https
-   HTTP_PORT=127.0.0.1:8080
-   ```
-3. Run `cd ~/ayu-ai && docker compose up -d` on the VM, or redeploy. Caddy gets a free Let's Encrypt certificate and redirects HTTP to HTTPS.
-
-To save Azure credit, stop the VM when you aren't using it: `az vm deallocate -g ayu-rg -n ayu-vm`.
+The earlier single-VM deploy (Docker Compose over SSH) is no longer run by CI. `deploy/setup-vm.sh` and `caddy/` are kept only for reference.
 
 ## API
 

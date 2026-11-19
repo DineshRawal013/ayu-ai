@@ -1,10 +1,10 @@
 name: Deploy to Azure Container Apps
 
-# Not the production path yet: the VM deploy in deploy.yml still runs on every push to main.
-# This workflow deploys only when you run it by hand (Actions > this workflow > Run workflow).
-# To switch production to Container Apps: add "push: branches: [main]" under "on:" here,
-# and remove the "deploy" job from deploy.yml. One-time setup: deploy/azure/README.md.
+# Production: every push to main builds and deploys to Azure Container Apps.
+# You can also run it by hand (Actions > this workflow > Run workflow). One-time setup: deploy/azure/README.md.
 on:
+  push:
+    branches: [main]
   workflow_dispatch:
   pull_request:
     paths:
@@ -22,7 +22,7 @@ env:
   RESOURCE_GROUP: ${{ vars.AZURE_RESOURCE_GROUP || 'ayu-aca-rg' }}
 
 concurrency:
-  group: azure-aca-${{ github.event_name }}
+  group: azure-aca-${{ github.event_name == 'pull_request' && github.ref || 'deploy' }}
   cancel-in-progress: false
 
 jobs:
@@ -45,7 +45,7 @@ jobs:
           done
 
   test:
-    if: github.event_name == 'workflow_dispatch'
+    if: github.event_name != 'pull_request'
     runs-on: ubuntu-latest
     strategy:
       matrix:
@@ -100,7 +100,7 @@ jobs:
   # Ollama with the model baked in (~1 GB model on top of the base image). Rebuilt only when
   # ollama/ changes, so a normal deploy doesn't push gigabytes to the registry.
   ollama-image:
-    if: github.event_name == 'workflow_dispatch'
+    if: github.event_name != 'pull_request'
     runs-on: ubuntu-latest
     environment: azure-aca
     outputs:
