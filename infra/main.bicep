@@ -39,6 +39,12 @@ param ollamaMinReplicas int = 0
 @maxValue(1)
 param appMinReplicas int = 0
 
+@description('Postgres compute. Some subscriptions (e.g. student ones) can\'t use every SKU in every region; check with: az postgres flexible-server list-skus -l <region>')
+param postgresSkuName string = 'Standard_B1ms'
+
+@allowed(['Burstable', 'GeneralPurpose', 'MemoryOptimized'])
+param postgresSkuTier string = 'Burstable'
+
 param postgresUser string = 'ayu'
 param postgresDb string = 'ayu'
 
@@ -123,8 +129,8 @@ resource pg 'Microsoft.DBforPostgreSQL/flexibleServers@2024-08-01' = {
   name: pgServerName
   location: location
   sku: {
-    name: 'Standard_B1ms'
-    tier: 'Burstable'
+    name: postgresSkuName
+    tier: postgresSkuTier
   }
   properties: {
     version: '16'
