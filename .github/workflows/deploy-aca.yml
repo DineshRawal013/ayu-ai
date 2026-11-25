@@ -1,17 +1,17 @@
 name: Deploy to Azure Container Apps
 
 # Production: every push to main builds and deploys to Azure Container Apps.
-# You can also run it by hand (Actions > this workflow > Run workflow). One-time setup: deploy/azure/README.md.
+# You can also run it by hand (Actions > this workflow > Run workflow). One-time setup: 6-deployment/azure/README.md.
 on:
   push:
     branches: [main]
   workflow_dispatch:
   pull_request:
     paths:
-      - infra/**
-      - ollama/**
-      - frontend/Dockerfile
-      - frontend/nginx.conf
+      - 6-deployment/azure/infra/**
+      - 4-implementation/ollama/**
+      - 4-implementation/frontend/Dockerfile
+      - 4-implementation/frontend/nginx.conf
       - .github/workflows/deploy-aca.yml
 
 permissions:
@@ -35,10 +35,10 @@ jobs:
       - name: Build Bicep
         run: |
           az bicep install
-          az bicep build --file infra/main.bicep --stdout > /dev/null
+          az bicep build --file 6-deployment/azure/infra/main.bicep --stdout > /dev/null
       - name: Frontend renders GATEWAY_URL for Compose and for Container Apps
         run: |
-          docker build -t ayu-frontend-check ./frontend
+          docker build -t ayu-frontend-check ./4-implementation/frontend
           for url in http://gateway:3000 http://gateway; do
             docker run --rm --add-host gateway:127.0.0.1 -e GATEWAY_URL="$url" ayu-frontend-check \
               sh -c '/docker-entrypoint.sh nginx -t && grep -n "proxy_pass\|proxy_set_header Host" /etc/nginx/conf.d/ayu.conf'
@@ -52,14 +52,14 @@ jobs:
         service: [gateway, health-svc, kundali-svc, ai-svc]
     defaults:
       run:
-        working-directory: services/${{ matrix.service }}
+        working-directory: 4-implementation/services/${{ matrix.service }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
           node-version: 20
           cache: npm
-          cache-dependency-path: services/${{ matrix.service }}/package-lock.json
+          cache-dependency-path: 4-implementation/services/${{ matrix.service }}/package-lock.json
       - run: npm ci
       - run: npm test
 
@@ -70,11 +70,11 @@ jobs:
     strategy:
       matrix:
         include:
-          - { service: frontend, context: ./frontend }
-          - { service: gateway, context: ./services/gateway }
-          - { service: health-svc, context: ./services/health-svc }
-          - { service: kundali-svc, context: ./services/kundali-svc }
-          - { service: ai-svc, context: ./services/ai-svc }
+          - { service: frontend, context: ./4-implementation/frontend }
+          - { service: gateway, context: ./4-implementation/services/gateway }
+          - { service: health-svc, context: ./4-implementation/services/health-svc }
+          - { service: kundali-svc, context: ./4-implementation/services/kundali-svc }
+          - { service: ai-svc, context: ./4-implementation/services/ai-svc }
     steps:
       - uses: actions/checkout@v4
       - uses: azure/login@v2
@@ -85,7 +85,7 @@ jobs:
       - name: Sign in to the registry
         run: |
           ACR=$(az acr list -g "$RESOURCE_GROUP" --query "[0].name" -o tsv)
-          test -n "$ACR" || { echo "No registry in $RESOURCE_GROUP. Run deploy/azure/bootstrap.sh first."; exit 1; }
+          test -n "$ACR" || { echo "No registry in $RESOURCE_GROUP. Run 6-deployment/azure/bootstrap.sh first."; exit 1; }
           az acr login -n "$ACR"
           echo "REGISTRY=$(az acr show -n "$ACR" --query loginServer -o tsv)" >> "$GITHUB_ENV"
       - uses: docker/setup-buildx-action@v3
@@ -113,23 +113,23 @@ jobs:
           tenant-id: ${{ secrets.AZURE_TENANT_ID }}
           subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
       - id: tag
-        name: Tag from the contents of ollama/
+        name: Tag from the contents of 4-implementation/ollama/
         run: |
-          HASH='${{ hashFiles('ollama/Dockerfile', 'ollama/entrypoint.sh') }}'
+          HASH='${{ hashFiles('4-implementation/ollama/Dockerfile', '4-implementation/ollama/entrypoint.sh') }}'
           echo "tag=${HASH:0:12}" >> "$GITHUB_OUTPUT"
       - name: Build and push unless the registry has it
         env:
           TAG: ${{ steps.tag.outputs.tag }}
         run: |
           ACR=$(az acr list -g "$RESOURCE_GROUP" --query "[0].name" -o tsv)
-          test -n "$ACR" || { echo "No registry in $RESOURCE_GROUP. Run deploy/azure/bootstrap.sh first."; exit 1; }
+          test -n "$ACR" || { echo "No registry in $RESOURCE_GROUP. Run 6-deployment/azure/bootstrap.sh first."; exit 1; }
           if az acr repository show-tags -n "$ACR" --repository ayu-ai-ollama -o tsv 2>/dev/null | grep -qx "$TAG"; then
             echo "ayu-ai-ollama:$TAG already in $ACR"
             exit 0
           fi
           az acr login -n "$ACR"
           IMAGE="$(az acr show -n "$ACR" --query loginServer -o tsv)/ayu-ai-ollama:$TAG"
-          docker build -t "$IMAGE" ./ollama
+          docker build -t "$IMAGE" ./4-implementation/ollama
           docker push "$IMAGE"
 
   deploy:
@@ -143,7 +143,7 @@ jobs:
           client-id: ${{ secrets.AZURE_CLIENT_ID }}
           tenant-id: ${{ secrets.AZURE_TENANT_ID }}
           subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
-      - name: Deploy infra/main.bicep
+      - name: Deploy 6-deployment/azure/infra/main.bicep
         env:
           PG_PASSWORD: ${{ secrets.AZURE_POSTGRES_PASSWORD }}
           SHA: ${{ github.sha }}
@@ -160,7 +160,7 @@ jobs:
           ACR=$(az acr list -g "$RESOURCE_GROUP" --query "[0].name" -o tsv)
           # The first run creates Postgres and the environment and takes 10 to 15 minutes.
           URL=$(az deployment group create -g "$RESOURCE_GROUP" -n "ayu-${SHA:0:12}" \
-            -f infra/main.bicep \
+            -f 6-deployment/azure/infra/main.bicep \
             -p acrName="$ACR" imageTag="$SHA" ollamaImageTag="$OLLAMA_TAG" postgresPassword="$PG_PASSWORD" \
                ollamaMinReplicas="$OLLAMA_MIN" appMinReplicas="$APP_MIN" \
                postgresSkuName="$PG_SKU" postgresSkuTier="$PG_TIER" ${LOCATION:+location="$LOCATION"} \

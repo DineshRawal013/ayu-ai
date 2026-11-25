@@ -14,8 +14,8 @@
 #   ai-svc            -> insight and lifespan-guess prompts for Ollama
 #   postgres, ollama  -> no public ports
 #
-# Local:   docker compose up --build
-# Azure:   images come from GHCR (see .github/workflows/deploy.yml)
+# Local:   cd 4-implementation && docker compose up --build
+# Azure:   production runs on Azure Container Apps (../6-deployment/azure), not from this file
 
 name: ayu-ai
 
@@ -44,7 +44,7 @@ services:
       DOMAIN: ${DOMAIN:-localhost}
     volumes:
       # The folder, not the file: the deploy replaces the file, and a file mount would keep the old one.
-      - ./caddy:/etc/caddy:ro
+      - ../6-deployment/scripts/old-vm/caddy:/etc/caddy:ro
       - caddy_data:/data
       - caddy_config:/config
     depends_on:

@@ -1,12 +1,12 @@
 #!/usr/bin/env bash
 # One-time Azure setup for the Container Apps deploy. Run it yourself in Azure Cloud Shell (Bash),
-# signed in as the subscription owner:   bash deploy/azure/bootstrap.sh
+# signed in as the subscription owner:   bash 6-deployment/azure/bootstrap.sh
 #
 # It creates only what the GitHub workflow can't make for itself:
 #   - resource group, container registry (ACR, Basic) and a pull identity with AcrPull
 #   - an Entra app that GitHub Actions signs in as (OIDC, no password), Contributor on the group
 # Then it sets up the GitHub environment and secrets with gh, or prints them to add by hand. Safe to run again: it reuses what already exists.
-# The apps, Postgres and network come later, from infra/main.bicep, when the workflow runs.
+# The apps, Postgres and network come later, from 6-deployment/azure/infra/main.bicep, when the workflow runs.
 set -euo pipefail
 
 REPO="${REPO:-DineshRawal013/ayu-ai}"          # GitHub owner/name, case as on GitHub
