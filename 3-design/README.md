@@ -7,4 +7,4 @@ How the system is built.
 | [architecture](architecture/) | System architecture and the Azure Container Apps architecture |
 | [context-diagram](context-diagram/) | Ayu AI and the external systems it talks to |
 | [database-design](database-design/) | ER diagram and schema |
-| [ui-design](ui-design/) | Wireframes and screenshots |
+| [ui-design](ui-design/) | High-fidelity mockups of every screen, desktop and mobile |

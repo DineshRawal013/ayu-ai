@@ -23,7 +23,7 @@ The repository follows the phases of the software development life cycle. Each p
 |---|---|---|
 | 1 | [1-planning](1-planning/) | Project charter, scope, schedule, [RACI](1-planning/raci/), risks, cost, communication, feasibility |
 | 2 | [2-requirements](2-requirements/) | SRS, [RTM](2-requirements/rtm/), [use cases](2-requirements/use-cases/) |
-| 3 | [3-design](3-design/) | [Architecture](3-design/architecture/), [context diagram](3-design/context-diagram/), database and UI design |
+| 3 | [3-design](3-design/) | [Architecture](3-design/architecture/), [context diagram](3-design/context-diagram/), [UI mockups](3-design/ui-design/), database design |
 | 4 | [4-implementation](4-implementation/) | All source code: frontend, the four services, Ollama, `docker-compose.yml` |
 | 5 | [5-testing](5-testing/) | Test plan, test cases, [unit tests](5-testing/unit-tests/), test reports |
 | 6 | [6-deployment](6-deployment/) | [Azure Container Apps](6-deployment/azure/) (Bicep, setup, pipeline), scripts, user manual |
