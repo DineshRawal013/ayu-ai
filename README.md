@@ -2,7 +2,34 @@
 
 **Ayu** (Sanskrit *āyu*, "life") reads your **age**, your **health** and your **Vedic birth chart** together on one page, then a **self-hosted AI model** writes a short personal summary of all three.
 
-It merges two earlier projects, [age-calculator-website](https://github.com/DineshRawal013/age-calculator-website) and HealthCheck, and adds AI insight, a database, a kundali and a deployment pipeline.
+It is a team project at **Dongshin University**. It merges two earlier projects, [age-calculator-website](https://github.com/DineshRawal013/age-calculator-website) and HealthCheck, and adds AI insight, a database, a kundali and a deployment pipeline.
+
+## Team
+
+| Member | Role |
+|---|---|
+| Dinesh | Team leader |
+| Saroj | AI |
+| Saurav | Frontend |
+| Manisha | Backend |
+| Sudurshan | Documentation |
+| Prayash | Cloud engineer |
+
+## Repository layout (SDLC phases)
+
+The repository follows the phases of the software development life cycle. Each phase folder has a README that lists what it holds.
+
+| Phase | Folder | Contents |
+|---|---|---|
+| 1 | [1-planning](1-planning/) | Project charter, scope, schedule, [RACI](1-planning/raci/), risks, cost, communication, feasibility |
+| 2 | [2-requirements](2-requirements/) | SRS, [RTM](2-requirements/rtm/), [use cases](2-requirements/use-cases/) |
+| 3 | [3-design](3-design/) | [Architecture](3-design/architecture/), [context diagram](3-design/context-diagram/), database and UI design |
+| 4 | [4-implementation](4-implementation/) | All source code: frontend, the four services, Ollama, `docker-compose.yml` |
+| 5 | [5-testing](5-testing/) | Test plan, test cases, [unit tests](5-testing/unit-tests/), test reports |
+| 6 | [6-deployment](6-deployment/) | [Azure Container Apps](6-deployment/azure/) (Bicep, setup, pipeline), scripts, user manual |
+| 7 | [7-closure](7-closure/) | [Presentation](7-closure/presentation/), final report, lessons learned |
+
+The CI/CD workflows stay in `.github/workflows/`, because GitHub only runs them from there.
 
 ## Features
 
@@ -63,11 +90,11 @@ flowchart LR
 
 | Container | Source | Port | Role |
 |---|---|---|---|
-| `frontend` | `frontend/` (nginx 1.27) | 80 (public) | Static page, proxies `/api` to the gateway and streams the AI text |
-| `gateway` | `services/gateway/` | 3000 | The only public API: routes, orchestration, results DB, share links, AI caching and locks, place search |
-| `health-svc` | `services/health-svc/` | 3001 | Exact age, health metrics, alerts, 12-week projection, lifespan estimate |
-| `kundali-svc` | `services/kundali-svc/` | 3002 | Birth chart, dasha, challenging periods, planet transits (Swiss Ephemeris) |
-| `ai-svc` | `services/ai-svc/` | 3003 | Insight and lifespan-guess prompts for Ollama, streaming, output validation |
+| `frontend` | `4-implementation/frontend/` (nginx 1.27) | 80 (public) | Static page, proxies `/api` to the gateway and streams the AI text |
+| `gateway` | `4-implementation/services/gateway/` | 3000 | The only public API: routes, orchestration, results DB, share links, AI caching and locks, place search |
+| `health-svc` | `4-implementation/services/health-svc/` | 3001 | Exact age, health metrics, alerts, 12-week projection, lifespan estimate |
+| `kundali-svc` | `4-implementation/services/kundali-svc/` | 3002 | Birth chart, dasha, challenging periods, planet transits (Swiss Ephemeris) |
+| `ai-svc` | `4-implementation/services/ai-svc/` | 3003 | Insight and lifespan-guess prompts for Ollama, streaming, output validation |
 | `postgres` | `postgres:16-alpine` | — | Anonymous result history (owned by the gateway) |
 | `ollama` | `ollama/ollama` | — | Local LLM, downloads the model on first start |
 | `caddy` (optional) | `caddy:2.8-alpine` | 80, 443 | HTTPS with Let's Encrypt (Azure only) |
@@ -89,19 +116,23 @@ The three domain services are **stateless** and never call each other. The gatew
 
 ```text
 ayu-ai/
-├── services/
-│   ├── gateway/        server.js (routes, runAnalysis), services.js (HTTP clients), db.js, geo.js
-│   ├── health-svc/     server.js, age.js, health.js, lifespan.js
-│   ├── kundali-svc/    server.js, kundali.js (native sweph module)
-│   └── ai-svc/         server.js, ai.js (Ollama prompts + streaming)
-│       (each has package.json, Dockerfile and test/)
-├── frontend/           index.html, style.css, app.js, kundali.js, nginx.conf, Dockerfile
-├── ollama/entrypoint.sh
-├── caddy/Caddyfile
-├── deploy/setup-vm.sh
-├── infra/              main.bicep (Azure Container Apps)
-├── .github/workflows/  deploy-aca.yml (deploy), deploy.yml (tests)
-└── docker-compose.yml
+├── 1-planning/ … 3-design/      documents (see "Repository layout" above)
+├── 4-implementation/
+│   ├── services/
+│   │   ├── gateway/        server.js (routes, runAnalysis), services.js (HTTP clients), db.js, geo.js
+│   │   ├── health-svc/     server.js, age.js, health.js, lifespan.js
+│   │   ├── kundali-svc/    server.js, kundali.js (native sweph module)
+│   │   └── ai-svc/         server.js, ai.js (Ollama prompts + streaming)
+│   │       (each has package.json, Dockerfile and test/)
+│   ├── frontend/           index.html, style.css, app.js, kundali.js, nginx.conf, Dockerfile
+│   ├── ollama/             entrypoint.sh, Dockerfile
+│   └── docker-compose.yml
+├── 5-testing/
+├── 6-deployment/
+│   ├── azure/              infra/main.bicep (Azure Container Apps), bootstrap.sh
+│   └── scripts/old-vm/     setup-vm.sh, caddy/Caddyfile (old VM deploy, reference only)
+├── 7-closure/
+└── .github/workflows/      deploy-aca.yml (deploy), deploy.yml (tests)
 ```
 
 ## Run locally
@@ -110,7 +141,7 @@ Requires Docker Desktop.
 
 ```bash
 git clone https://github.com/DineshRawal013/ayu-ai.git
-cd ayu-ai
+cd ayu-ai/4-implementation
 cp .env.example .env          # then edit POSTGRES_PASSWORD (and HTTP_PORT=8080 if port 80 is busy)
 docker compose up --build
 ```
@@ -124,14 +155,14 @@ docker compose logs -f ollama
 Tests (each service has its own suite; ai-svc uses a fake Ollama):
 
 ```bash
-cd services/gateway && npm ci && npm test       # likewise for health-svc, kundali-svc, ai-svc
+cd 4-implementation/services/gateway && npm ci && npm test       # likewise for health-svc, kundali-svc, ai-svc
 ```
 
 ## Deploy to Azure (Container Apps)
 
-Production runs on Azure Container Apps. Every push to `main` runs the tests, builds the images into Azure Container Registry and deploys `infra/main.bicep` (`.github/workflows/deploy-aca.yml`). The run summary shows the site's URL. One-time setup, cost and options: [deploy/azure/README.md](deploy/azure/README.md).
+Production runs on Azure Container Apps. Every push to `main` runs the tests, builds the images into Azure Container Registry and deploys `6-deployment/azure/infra/main.bicep` (`.github/workflows/deploy-aca.yml`). The run summary shows the site's URL. One-time setup, cost and options: [6-deployment/azure/README.md](6-deployment/azure/README.md).
 
-The earlier single-VM deploy (Docker Compose over SSH) is no longer run by CI. `deploy/setup-vm.sh` and `caddy/` are kept only for reference.
+The earlier single-VM deploy (Docker Compose over SSH) is no longer run by CI. `6-deployment/scripts/old-vm/` (`setup-vm.sh` and `caddy/`) is kept only for reference.
 
 ## API
 

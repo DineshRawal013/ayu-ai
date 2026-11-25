@@ -5,7 +5,7 @@
 //   health-svc, kundali-svc, ai-svc, ollama   internal
 //   Postgres     Azure Database for PostgreSQL Flexible Server, private (VNet only)
 //
-// The registry (ACR) and the pull identity are created once by deploy/azure/bootstrap.sh,
+// The registry (ACR) and the pull identity are created once by 6-deployment/azure/bootstrap.sh,
 // so images can be pushed before this file is deployed. Deployed by .github/workflows/deploy-aca.yml.
 
 targetScope = 'resourceGroup'
@@ -24,7 +24,7 @@ param identityName string = 'ayu-aca-pull'
 @description('Tag of the five app images (the commit SHA).')
 param imageTag string
 
-@description('Tag of the ayu-ai-ollama image (changes only when ollama/ changes).')
+@description('Tag of the ayu-ai-ollama image (changes only when 4-implementation/ollama/ changes).')
 param ollamaImageTag string
 
 param ollamaModel string = 'qwen2.5:1.5b'
@@ -375,7 +375,7 @@ module frontend 'modules/app.bicep' = {
     minReplicas: appMinReplicas
     maxReplicas: 3
     env: [
-      // Internal apps are reached on port 80 by name; see the template in frontend/nginx.conf.
+      // Internal apps are reached on port 80 by name; see the template in 4-implementation/frontend/nginx.conf.
       { name: 'GATEWAY_URL', value: 'http://gateway' }
     ]
     probes: httpProbes('/', 80)

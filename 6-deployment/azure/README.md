@@ -1,17 +1,17 @@
 # Deploy to Azure Container Apps
 
-This runs the same services as `docker-compose.yml`, but as Azure Container Apps instead of containers on one VM. It is the production deploy: every push to `main` runs `.github/workflows/deploy-aca.yml`.
+This runs the same services as `4-implementation/docker-compose.yml`, but as Azure Container Apps instead of containers on one VM. It is the production deploy: every push to `main` runs `.github/workflows/deploy-aca.yml`.
 
 | Compose (VM) | Azure |
 |---|---|
 | `frontend` on port 80, Caddy for HTTPS | `frontend` container app, public HTTPS on `https://frontend.<id>.koreacentral.azurecontainerapps.io` (no Caddy needed) |
 | `gateway`, `health-svc`, `kundali-svc`, `ai-svc` | One internal container app each, reached by name (`http://gateway`, ...) |
-| `ollama` + `ollama_data` volume | `ollama` container app, image `ayu-ai-ollama` with the model baked in (`ollama/Dockerfile`) |
+| `ollama` + `ollama_data` volume | `ollama` container app, image `ayu-ai-ollama` with the model baked in (`4-implementation/ollama/Dockerfile`) |
 | `postgres` + `pgdata` volume | Azure Database for PostgreSQL Flexible Server (Burstable B1ms, 32 GB), private, VNet only |
 | `data-net`, `services-net`, `ai-net` | One VNet. Only the frontend is public; Postgres has no public endpoint |
 | GHCR images | Azure Container Registry (Basic) |
 
-Files: `infra/main.bicep` (everything), `infra/modules/app.bicep` (one container app), `deploy/azure/bootstrap.sh` (one-time setup), `.github/workflows/deploy-aca.yml` (build and deploy).
+Files: `6-deployment/azure/infra/main.bicep` (everything), `6-deployment/azure/infra/modules/app.bicep` (one container app), `6-deployment/azure/bootstrap.sh` (one-time setup), `.github/workflows/deploy-aca.yml` (build and deploy).
 
 ## One-time setup
 
@@ -22,7 +22,7 @@ Do this once, before the first push to `main` deploys.
    ```bash
    gh auth login        # once: lets the script add the GitHub secrets for you
    git clone https://github.com/DineshRawal013/ayu-ai.git && cd ayu-ai
-   bash deploy/azure/bootstrap.sh
+   bash 6-deployment/azure/bootstrap.sh
    ```
 
    It creates the resource group `ayu-aca-rg` (Korea Central), the registry, a pull identity, and an Entra app that GitHub Actions signs in as with OIDC (no password is stored anywhere). Then it creates the GitHub environment `azure-aca` with these secrets: `AZURE_CLIENT_ID`, `AZURE_TENANT_ID`, `AZURE_SUBSCRIPTION_ID`, and `AZURE_POSTGRES_PASSWORD`, which it generates without showing it. If you skip `gh auth login`, it prints the values for you to add under **Settings > Environments** instead.
@@ -66,7 +66,7 @@ Production was switched from the VM to Container Apps. For reference, the steps 
 
 ## Notes
 
-- `frontend/nginx.conf` is now a template: `GATEWAY_URL` is `http://gateway:3000` on Compose (the image default) and `http://gateway` on Container Apps, where internal apps listen on port 80 by name.
+- `4-implementation/frontend/nginx.conf` is now a template: `GATEWAY_URL` is `http://gateway:3000` on Compose (the image default) and `http://gateway` on Container Apps, where internal apps listen on port 80 by name.
 - The gateway runs with at most one replica, because its "already generating" locks are in memory.
 - Container Apps ends an HTTP request after 240 seconds. The AI read streams, and on 2 vCPU it finishes well within that.
 - To remove everything: `az group delete -n ayu-aca-rg`.
